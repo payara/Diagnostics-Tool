@@ -1,4 +1,6 @@
-package fish.payara.extras.diagnostics.collector;
+package fish.payara.extras.diagnostics.asadmin;
+
+import java.util.Properties;
 
 import javax.inject.Inject;
 
@@ -11,20 +13,21 @@ import org.jvnet.hk2.annotations.Service;
 
 import com.sun.enterprise.admin.servermgmt.cli.LocalDomainCommand;
 
-@Service(name = "diagnostics-tool")
+import fish.payara.extras.diagnostics.collection.CollectorService;
+
+@Service(name = "collect")
 @PerLookup
 public class CollectAsadmin extends LocalDomainCommand {
 
     Logger logger = Logger.getLogger(getClass().getClass());
-    
-    @Inject
-    private ServiceLocator habitat;
 
     @Override
     protected int executeCommand() throws CommandException {
+        Properties props = new Properties();
+        props.setProperty("Key", "Value");
+        CollectorService service = new CollectorService(props);
+        System.out.println(service.Collect());
         logger.log(Level.INFO, "Command Executed");
         return 0;
     }
-
-
 }

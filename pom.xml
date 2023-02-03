@@ -181,6 +181,7 @@
                 <configuration>
                     <archive>
                         <manifest>
+                            <mainClass>fish.payara.extras.diagnostics.App</mainClass>
                             <addClasspath>true</addClasspath>
                             <classpathLayoutType>custom</classpathLayoutType>
                             <customClasspathLayout>${artifact.artifactId}.${artifact.extension}</customClasspathLayout>
