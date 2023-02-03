@@ -4,23 +4,22 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import org.glassfish.api.admin.ParameterMap;
+
 import fish.payara.extras.diagnostics.collection.collectors.LogCollector;
 
 public class CollectorService {
 
     private Map<String, Collector> collectorMap;
-    private Properties properties;
+    private ParameterMap parameterMap;
 
-    public CollectorService(Properties properties) {
+    public CollectorService(ParameterMap params) {
+        this.parameterMap = params;
+
         collectorMap = new HashMap<String, Collector>();
-        collectorMap.put("Log", new LogCollector());
-        this.properties = properties;
     }
 
-    public String Collect() {
-        for(Collector c : collectorMap.values()) {
-            c.Collect();
-        }
-        return properties.getProperty("Key");
+    public void registerCollector(Collector collector, String key) {
+        this.collectorMap.put(key, collector);
     }
 }

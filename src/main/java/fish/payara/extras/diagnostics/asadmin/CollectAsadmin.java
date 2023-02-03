@@ -4,7 +4,9 @@ import java.util.Properties;
 
 import javax.inject.Inject;
 
+import org.glassfish.api.Param;
 import org.glassfish.api.admin.CommandException;
+import org.glassfish.api.admin.ParameterMap;
 import org.glassfish.hk2.api.PerLookup;
 import org.glassfish.hk2.api.ServiceLocator;
 import org.jboss.logging.Logger;
@@ -21,13 +23,15 @@ public class CollectAsadmin extends LocalDomainCommand {
 
     Logger logger = Logger.getLogger(getClass().getClass());
 
+    @Param(name = "serverlog", optional = true)
+    private boolean collectServerLog;
+
+    @Param(name = "accesslog", optional = true)
+    private boolean collectAccessLog;
+
     @Override
     protected int executeCommand() throws CommandException {
-        Properties props = new Properties();
-        props.setProperty("Key", "Value");
-        CollectorService service = new CollectorService(props);
-        System.out.println(service.Collect());
-        logger.log(Level.INFO, "Command Executed");
+        // TODO implementation
         return 0;
     }
 }

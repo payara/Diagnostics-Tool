@@ -1,7 +1,10 @@
 package fish.payara.extras.diagnostics.asadmin;
 
+import java.util.Properties;
+
 import javax.inject.Inject;
 
+import org.glassfish.api.Param;
 import org.glassfish.api.admin.CommandException;
 import org.glassfish.hk2.api.ServiceLocator;
 
