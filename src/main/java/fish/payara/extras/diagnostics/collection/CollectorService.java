@@ -2,11 +2,9 @@ package fish.payara.extras.diagnostics.collection;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import org.glassfish.api.admin.ParameterMap;
 
-import fish.payara.extras.diagnostics.collection.collectors.LogCollector;
 
 public class CollectorService {
 
@@ -15,6 +13,7 @@ public class CollectorService {
 
     public CollectorService(ParameterMap params) {
         this.parameterMap = params;
+        System.out.println(params);
 
         collectorMap = new HashMap<String, Collector>();
     }

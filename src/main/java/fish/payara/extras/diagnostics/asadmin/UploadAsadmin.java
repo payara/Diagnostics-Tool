@@ -1,4 +1,4 @@
-package fish.payara.extras.diagnostics.coordinator;
+package fish.payara.extras.diagnostics.asadmin;
 
 public class UploadAsadmin {
     

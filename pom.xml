@@ -20,7 +20,7 @@
 
   <repositories>
     <repository>
-        <id>payara-nexus-enterprise-artifacts</id>
+        <id>payara-enterprise</id>
         <name>Payara Enterprise Private Artifacts</name>
         <url>https://nexus.payara.fish/repository/payara-enterprise-artifacts-private/</url>
     </repository>
