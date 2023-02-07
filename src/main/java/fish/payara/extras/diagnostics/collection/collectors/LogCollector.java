@@ -1,19 +1,10 @@
 package fish.payara.extras.diagnostics.collection.collectors;
 
-import fish.payara.extras.diagnostics.collection.Collector;
-
-public class LogCollector implements Collector {
-
-    // java.util.logging.config.file
-    // com.sun.enterprise.server.logging.GFFileHandler.file
+public class LogCollector extends FileCollector {
     
-    @Override
-    public void Collect() {
+    private String getLogPathFromDomainXml(String domainXmlPath) {
         
-    }
-
-    public Boolean preliminaryCheck() {
-        return false;
+        return null;
     }
 
 }
