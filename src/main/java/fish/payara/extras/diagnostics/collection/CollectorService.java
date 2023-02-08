@@ -4,11 +4,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import org.glassfish.api.admin.ParameterMap;
 
 
 public class CollectorService {
+    Logger logger = Logger.getLogger(this.getClass().getName());
 
     ParameterMap parameterMap;
     String[] parameterOptions;
@@ -22,6 +24,13 @@ public class CollectorService {
 
     public int executCollection() {
         List<Collector> activeCollectors = getActiveCollectors(parameterMap, parameterOptions, collectors);
+
+        if(activeCollectors.size() != 0) {
+            for(Collector collector : activeCollectors) {
+                collector.setParams(parameterMap);
+                collector.collect();
+            }
+        }
 
         return 0;
     }

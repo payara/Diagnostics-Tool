@@ -24,7 +24,7 @@ public abstract class FileCollector implements Collector {
     public FileCollector() {}
 
     public FileCollector(String filePath, String destination) {
-        this(Path.of(filePath), Path.of(filePath));
+        this(Path.of(filePath), Path.of(destination));
     }
 
     public FileCollector(Path filePath, Path destination) {
@@ -53,31 +53,29 @@ public abstract class FileCollector implements Collector {
 
     @Override
     public void setParams(ParameterMap params) {
-        Params = params;
+        if(params != null) {
+            Params = params;
+        }
     }
 
-    @Override
-    public void setFilePath(String filePath) {
-        // TODO Auto-generated method stub
-        
+    public void setFilePath(Path filePath) {
+        if(filePath != null) {
+            this.filePath = filePath;
+        }
     }
 
-    @Override
-    public void setDestination(String path) {
-        // TODO Auto-generated method stub
-        
+    public void setDestination(Path path) {
+        if(path != null) {
+            this.destination = path;
+        }
     }
 
-    @Override
-    public void getFilePath() {
-        // TODO Auto-generated method stub
-        
+    public Path getFilePath() {
+        return this.filePath;
     }
 
-    @Override
-    public void getDestination() {
-        // TODO Auto-generated method stub
-        
+    public Path getDestination() {
+        return this.destination;
     }
 
 }

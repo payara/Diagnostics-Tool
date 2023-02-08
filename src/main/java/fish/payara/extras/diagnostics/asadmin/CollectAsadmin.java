@@ -1,42 +1,32 @@
 package fish.payara.extras.diagnostics.asadmin;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.rmi.UnexpectedException;
 import java.util.Map;
+import java.util.logging.Logger;
 
-import javax.inject.Inject;
-
-import org.glassfish.api.ExecutionContext;
 import org.glassfish.api.Param;
-import org.glassfish.api.ParamDefaultCalculator;
 import org.glassfish.api.admin.CommandException;
 import org.glassfish.api.admin.ParameterMap;
 import org.glassfish.hk2.api.PerLookup;
-import org.jboss.logging.Logger;
 import org.jvnet.hk2.annotations.Service;
 import static java.util.Map.entry;
 
 import fish.payara.extras.diagnostics.collection.Collector;
 import fish.payara.extras.diagnostics.collection.CollectorService;
 import fish.payara.extras.diagnostics.collection.collectors.DomainXmlCollector;
-import fish.payara.extras.diagnostics.collection.collectors.FileCollector;
 import fish.payara.extras.diagnostics.collection.collectors.LogCollector;
 
 @Service(name = "collect")
 @PerLookup
 public class CollectAsadmin extends BaseAsadmin {
+    Logger logger = Logger.getLogger(this.getClass().getName());
 
-    Logger logger = Logger.getLogger(getClass().getClass());
-
-    private static final String[] PARAMETER_OPTIONS = {"serverLog", "domainXml"};
+    private static final String[] PARAMETER_OPTIONS = {"serverLog", "domainXml", "outputDir"};
     private static final Map<String, Collector> COLLECTORS = Map.ofEntries(
     entry(PARAMETER_OPTIONS[0], new LogCollector()),
     entry(PARAMETER_OPTIONS[1], new DomainXmlCollector())
     );
+
+    private static final String LOGGING_CONFIG_FILE_SYS_PROP = "java.util.logging.config.file";
 
     @Param(name = "serverLog", shortName = "s", optional = true, defaultValue = "true")
     private boolean collectServerLog;
@@ -44,29 +34,39 @@ public class CollectAsadmin extends BaseAsadmin {
     @Param(name = "domainXml", shortName = "d", optional = true, defaultValue = "true")
     private boolean collectDomainXml;
 
+    @Param(name = "outputDir", shortName = "o", optional = false, defaultValue = "/output")
+    private String outputDir;
+
     private CollectorService collectorService;
+
+    private ParameterMap parameterMap;
 
     @Override
     protected int executeCommand() throws CommandException {
-        ParameterMap parameterMap = new ParameterMap();
-
-        for(String opt : PARAMETER_OPTIONS) {
-            parameterMap.add(opt, getOption(opt));
-        }        
-        parameterMap.add("DomainXMLFilePath", getDomainXml().getAbsolutePath());
-        parameterMap.add("DomainName", getDomainName());
-
-        parameterMap.add("java.util.logging.config.file", getLoggingConfigFilePath());
+        parameterMap = populateParameters(new ParameterMap());
         
         collectorService = new CollectorService(parameterMap, PARAMETER_OPTIONS, COLLECTORS);
 
-        return 0;
+        return collectorService.executCollection();
+    }
+
+    private ParameterMap populateParameters(ParameterMap params) {
+        for(String opt : PARAMETER_OPTIONS) {
+            params.add(opt, getOption(opt));
+        }
+
+        params.add("DomainXMLFilePath", getDomainXml().getAbsolutePath());
+        params.add("DomainName", getDomainName());
+
+        params.add(LOGGING_CONFIG_FILE_SYS_PROP, getLoggingConfigFilePath());
+
+        return params;
     }
 
     private String getLoggingConfigFilePath() {
-        String loggingConfigFile = getSystemProperty("java.util.logging.config.file");
+        String loggingConfigFile = getSystemProperty(LOGGING_CONFIG_FILE_SYS_PROP);
         if(loggingConfigFile != null) {
-            return getSystemProperty("java.util.logging.config.file");
+            return getSystemProperty(LOGGING_CONFIG_FILE_SYS_PROP);
         }
         return "";
     }
