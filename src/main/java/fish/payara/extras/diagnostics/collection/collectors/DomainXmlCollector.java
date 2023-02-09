@@ -19,6 +19,8 @@ public class DomainXmlCollector extends FileCollector {
             Path outputPath = getPathFromParams("outputDir", params);
             Path domainXmlPath = getPathFromParams("DomainXMLFilePath", params);
             if(domainXmlPath != null && outputPath != null) {
+                System.out.println(domainXmlPath.toString());
+                System.out.println(outputPath.toString());
                 setFilePath(domainXmlPath);
                 setDestination(outputPath);
                 return super.collect();
