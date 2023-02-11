@@ -1,17 +1,21 @@
 package fish.payara.extras.diagnostics.collection.collectors;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.logging.Logger;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 import org.glassfish.api.admin.ParameterMap;
+import org.glassfish.api.logging.LogLevel;
 
 import fish.payara.extras.diagnostics.collection.Collector;
 
 public abstract class FileCollector implements Collector {
+    Logger logger = Logger.getLogger(this.getClass().getName());
 
     private Path filePath;
     private Path destination;
@@ -38,12 +42,34 @@ public abstract class FileCollector implements Collector {
 
     @Override
     public int collect() {
-        try {
-            Files.move(filePath, destination, REPLACE_EXISTING);
-        } catch (IOException e) {
-            e.printStackTrace();
+        if(confirmPath(filePath, false) && confirmPath(destination, true)) {
+            try {
+                Files.copy(filePath, destination.resolve(filePath.getFileName()), REPLACE_EXISTING);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
-        return 0;
+        return 1;
+    }
+
+    private boolean confirmPath(Path path, boolean createIfNonExistant) {
+        if(path != null) {
+            if(Files.exists(path)) {
+                return true;
+            } else {
+                if(createIfNonExistant) {
+                    try {
+                        Files.createDirectory(path);
+                    } catch (IOException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+        logger.log(LogLevel.SEVERE, "Could not validate path at: " + path);
+        return false;
     }
 
     @Override
@@ -58,13 +84,13 @@ public abstract class FileCollector implements Collector {
         }
     }
 
-    public void setFilePath(Path filePath) {
+    public void setFilePath(Path filePath) throws FileNotFoundException {
         if(filePath != null) {
             this.filePath = filePath;
         }
     }
 
-    public void setDestination(Path path) {
+    public void setDestination(Path path) throws FileNotFoundException {
         if(path != null) {
             this.destination = path;
         }

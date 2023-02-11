@@ -34,7 +34,7 @@ public class CollectAsadmin extends BaseAsadmin {
     @Param(name = "domainXml", shortName = "d", optional = true, defaultValue = "true")
     private boolean collectDomainXml;
 
-    @Param(name = "outputDir", shortName = "o", optional = false, defaultValue = "/output")
+    @Param(name = "outputDir", shortName = "o", optional = false)
     private String outputDir;
 
     private CollectorService collectorService;
