@@ -22,13 +22,15 @@ public class CollectAsadmin extends BaseAsadmin {
 
     private static final String[] PARAMETER_OPTIONS = {"serverLog", "domainXml", "outputDir"};
     private static final Map<String, Collector> COLLECTORS = Map.ofEntries(
-    entry(PARAMETER_OPTIONS[0], new LogCollector()),
-    entry(PARAMETER_OPTIONS[1], new DomainXmlCollector())
+        entry(PARAMETER_OPTIONS[0], new LogCollector()),
+        entry(PARAMETER_OPTIONS[1], new DomainXmlCollector())
     );
 
     private static final String LOGGING_CONFIG_FILE_SYS_PROP = "java.util.logging.config.file";
+    private static final String DOMAIN_NAME = "DomainName";
+    private static final String DOMAIN_XML_FILE_PATH = "DomainXMLFilePath";
 
-    @Param(name = "serverLog", shortName = "s", optional = true, defaultValue = "true")
+    @Param(name = "serverLogs", shortName = "s", optional = true, defaultValue = "true")
     private boolean collectServerLog;
 
     @Param(name = "domainXml", shortName = "d", optional = true, defaultValue = "true")
@@ -55,8 +57,8 @@ public class CollectAsadmin extends BaseAsadmin {
             params.add(opt, getOption(opt));
         }
 
-        params.add("DomainXMLFilePath", getDomainXml().getAbsolutePath());
-        params.add("DomainName", getDomainName());
+        params.add(DOMAIN_XML_FILE_PATH, getDomainXml().getAbsolutePath());
+        params.add(DOMAIN_NAME, getDomainName());
 
         params.add(LOGGING_CONFIG_FILE_SYS_PROP, getLoggingConfigFilePath());
 

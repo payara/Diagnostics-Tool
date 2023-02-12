@@ -42,33 +42,32 @@ public abstract class FileCollector implements Collector {
 
     @Override
     public int collect() {
-        if(confirmPath(filePath, false) && confirmPath(destination, true)) {
-            try {
+        try {
+            if(confirmPath(filePath, false) && confirmPath(destination, true)) {
                 Files.copy(filePath, destination.resolve(filePath.getFileName()), REPLACE_EXISTING);
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                return 1;
             }
+        } catch (IOException ie) {
+            logger.log(LogLevel.SEVERE, "Could not copy path from " + filePath + " to " + destination);
+            ie.printStackTrace();
         }
-        return 1;
+        
+        return 0;
     }
 
-    private boolean confirmPath(Path path, boolean createIfNonExistant) {
+    private boolean confirmPath(Path path, boolean createIfNonExistant) throws IOException {
         if(path != null) {
             if(Files.exists(path)) {
                 return true;
             } else {
                 if(createIfNonExistant) {
-                    try {
-                        Files.createDirectory(path);
-                    } catch (IOException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
+                    logger.log(LogLevel.WARNING, "Attempting to create output path at " + path);
+                    Files.createDirectory(path);
+                    //Path is confirmed if it exists.
+                    return Files.exists(path);
                 }
             }
         }
-        logger.log(LogLevel.SEVERE, "Could not validate path at: " + path);
         return false;
     }
 
@@ -84,13 +83,13 @@ public abstract class FileCollector implements Collector {
         }
     }
 
-    public void setFilePath(Path filePath) throws FileNotFoundException {
+    public void setFilePath(Path filePath) {
         if(filePath != null) {
             this.filePath = filePath;
         }
     }
 
-    public void setDestination(Path path) throws FileNotFoundException {
+    public void setDestination(Path path) {
         if(path != null) {
             this.destination = path;
         }
