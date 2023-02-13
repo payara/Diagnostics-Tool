@@ -4,18 +4,15 @@ import java.util.List;
 import java.util.Map;
 
 import org.glassfish.api.admin.ParameterMap;
-import org.junit.Before;
 import org.junit.Test;
 
 import fish.payara.extras.diagnostics.collection.collectors.LogCollector;
 
 import static java.util.Map.entry;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class CollectorServiceTest {
-    private CollectorService collectorService;
 
     private static final String[] PARAMETER_OPTIONS = {"Para1","Para2","Para3","Para4","Para5","Para6","Para7","Para8","Para9","Para10","Para11"};
     private static final Map<String, Collector> COLLECTORS = Map.ofEntries(
@@ -89,7 +86,45 @@ public class CollectorServiceTest {
         assertTrue(activeCollectors.size() == 0);
     }
 
+    @Test
     public void getActiveCollectorsIncompleteTest() {
+        ParameterMap params = new ParameterMap();
 
+        for(int i = 0; i < PARAMETER_OPTIONS.length/2; i++) {
+            params.add(PARAMETER_OPTIONS[i], "true");
+        }
+
+        CollectorService collectorService = new CollectorService(params, PARAMETER_OPTIONS, COLLECTORS);
+        List<Collector> activeCollectors = collectorService.getActiveCollectors(params, PARAMETER_OPTIONS, COLLECTORS);
+        assertNotNull(activeCollectors);
+        assertTrue(activeCollectors.size() == 5);
+    }
+
+    @Test
+    public void getActiveCollectorsInvalidTest() {
+        ParameterMap params = new ParameterMap();
+
+        for(String parameter : PARAMETER_OPTIONS) {
+            params.add(parameter, "invalid");
+        }
+
+        CollectorService collectorService = new CollectorService(params, PARAMETER_OPTIONS, COLLECTORS);
+        List<Collector> activeCollectors = collectorService.getActiveCollectors(params, PARAMETER_OPTIONS, COLLECTORS);
+        assertNotNull(activeCollectors);
+        assertTrue(activeCollectors.size() == 0);
+    }
+
+    @Test
+    public void getActiveCollectorsEmptyTest() {
+        ParameterMap params = new ParameterMap();
+
+        for(String parameter : PARAMETER_OPTIONS) {
+            params.add(parameter, "");
+        }
+
+        CollectorService collectorService = new CollectorService(params, PARAMETER_OPTIONS, COLLECTORS);
+        List<Collector> activeCollectors = collectorService.getActiveCollectors(params, PARAMETER_OPTIONS, COLLECTORS);
+        assertNotNull(activeCollectors);
+        assertTrue(activeCollectors.size() == 0);
     }
 }

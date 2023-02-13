@@ -1,7 +1,6 @@
 package fish.payara.extras.diagnostics.collection.collectors;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -55,14 +54,20 @@ public abstract class FileCollector implements Collector {
         return 0;
     }
 
-    private boolean confirmPath(Path path, boolean createIfNonExistant) throws IOException {
+    protected boolean confirmPath(Path path, boolean createIfNonExistant) {
         if(path != null) {
             if(Files.exists(path)) {
                 return true;
             } else {
                 if(createIfNonExistant) {
-                    logger.log(LogLevel.WARNING, "Attempting to create output path at " + path);
-                    Files.createDirectory(path);
+                    logger.log(LogLevel.INFO, "Attempting to create missing path at " + path);
+                    try {
+                        Files.createDirectory(path);
+                    } catch(IOException io) {
+                        logger.log(LogLevel.WARNING, "Could not create file at " + path.toString());
+                        return false;
+                    }
+                    
                     //Path is confirmed if it exists.
                     return Files.exists(path);
                 }

@@ -3,14 +3,11 @@ package fish.payara.extras.diagnostics.collection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import org.glassfish.api.admin.ParameterMap;
 
 
 public class CollectorService {
-    Logger logger = Logger.getLogger(this.getClass().getName());
-
     ParameterMap parameterMap;
     String[] parameterOptions;
     Map<String, Collector> collectors;
