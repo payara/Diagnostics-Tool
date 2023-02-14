@@ -1,7 +1,6 @@
 package fish.payara.extras.diagnostics.asadmin;
 
 import java.util.Map;
-import java.util.logging.Logger;
 
 import org.glassfish.api.Param;
 import org.glassfish.api.admin.CommandException;
@@ -9,8 +8,6 @@ import org.glassfish.api.admin.ParameterMap;
 import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
 import static java.util.Map.entry;
-
-import java.io.File;
 
 import fish.payara.extras.diagnostics.collection.Collector;
 import fish.payara.extras.diagnostics.collection.CollectorService;
@@ -41,10 +38,6 @@ public class CollectAsadmin extends BaseAsadmin {
 
     @Param(name = "outputDir", shortName = "o", optional = false)
     private String outputDir;
-
-    private CollectorService collectorService;
-
-    private ParameterMap parameterMap;
 
     @Override
     protected int executeCommand() throws CommandException {
