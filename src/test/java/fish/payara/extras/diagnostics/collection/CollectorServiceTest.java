@@ -38,7 +38,7 @@ public class CollectorServiceTest {
             params.add(parameter, "false");
         }
 
-        CollectorService collectorService = new CollectorService(params, PARAMETER_OPTIONS, COLLECTORS);
+        CollectorService collectorService = new CollectorService(params, PARAMETER_OPTIONS);
         List<Collector> activeCollectors = collectorService.getActiveCollectors(params, PARAMETER_OPTIONS, COLLECTORS);
         assertNotNull(activeCollectors);
         assertTrue(activeCollectors.size() == 0);
@@ -53,7 +53,7 @@ public class CollectorServiceTest {
             params.add(parameter, "true");
         }
 
-        CollectorService collectorService = new CollectorService(params, PARAMETER_OPTIONS, COLLECTORS);
+        CollectorService collectorService = new CollectorService(params, PARAMETER_OPTIONS);
         List<Collector> activeCollectors = collectorService.getActiveCollectors(params, PARAMETER_OPTIONS, COLLECTORS);
         assertNotNull(activeCollectors);
         assertTrue(activeCollectors.size() == 11);
@@ -72,7 +72,7 @@ public class CollectorServiceTest {
             params.add(PARAMETER_OPTIONS[i], "false");
         }
 
-        CollectorService collectorService = new CollectorService(params, PARAMETER_OPTIONS, COLLECTORS);
+        CollectorService collectorService = new CollectorService(params, PARAMETER_OPTIONS);
         List<Collector> activeCollectors = collectorService.getActiveCollectors(params, PARAMETER_OPTIONS, COLLECTORS);
         assertNotNull(activeCollectors);
         assertTrue(activeCollectors.size() == 5);
@@ -80,7 +80,7 @@ public class CollectorServiceTest {
 
     @Test
     public void getActiveCollectorsNullTest() {
-        CollectorService collectorService = new CollectorService(null, null, null);
+        CollectorService collectorService = new CollectorService(null, null);
         List<Collector> activeCollectors = collectorService.getActiveCollectors(null, null, null);
         assertNotNull(activeCollectors);
         assertTrue(activeCollectors.size() == 0);
@@ -94,7 +94,7 @@ public class CollectorServiceTest {
             params.add(PARAMETER_OPTIONS[i], "true");
         }
 
-        CollectorService collectorService = new CollectorService(params, PARAMETER_OPTIONS, COLLECTORS);
+        CollectorService collectorService = new CollectorService(params, PARAMETER_OPTIONS);
         List<Collector> activeCollectors = collectorService.getActiveCollectors(params, PARAMETER_OPTIONS, COLLECTORS);
         assertNotNull(activeCollectors);
         assertTrue(activeCollectors.size() == 5);
@@ -108,7 +108,7 @@ public class CollectorServiceTest {
             params.add(parameter, "invalid");
         }
 
-        CollectorService collectorService = new CollectorService(params, PARAMETER_OPTIONS, COLLECTORS);
+        CollectorService collectorService = new CollectorService(params, PARAMETER_OPTIONS);
         List<Collector> activeCollectors = collectorService.getActiveCollectors(params, PARAMETER_OPTIONS, COLLECTORS);
         assertNotNull(activeCollectors);
         assertTrue(activeCollectors.size() == 0);
@@ -122,7 +122,7 @@ public class CollectorServiceTest {
             params.add(parameter, "");
         }
 
-        CollectorService collectorService = new CollectorService(params, PARAMETER_OPTIONS, COLLECTORS);
+        CollectorService collectorService = new CollectorService(params, PARAMETER_OPTIONS);
         List<Collector> activeCollectors = collectorService.getActiveCollectors(params, PARAMETER_OPTIONS, COLLECTORS);
         assertNotNull(activeCollectors);
         assertTrue(activeCollectors.size() == 0);

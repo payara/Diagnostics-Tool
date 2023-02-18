@@ -7,43 +7,38 @@ import org.glassfish.api.admin.CommandException;
 import org.glassfish.api.admin.ParameterMap;
 import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
-import static java.util.Map.entry;
-
-import fish.payara.extras.diagnostics.collection.Collector;
 import fish.payara.extras.diagnostics.collection.CollectorService;
-import fish.payara.extras.diagnostics.collection.collectors.DomainXmlCollector;
-import fish.payara.extras.diagnostics.collection.collectors.LogCollector;
 
 @Service(name = "collect")
 @PerLookup
 public class CollectAsadmin extends BaseAsadmin {
+    private static final String SERVER_LOG_PARAM = "serverLogs";
+    private static final String DOMAIN_XML_PARAM = "domainXml";
+    private static final String OUTPUT_DIR_PARAM = "outputDir";
 
-    private static final String[] PARAMETER_OPTIONS = {"serverLogs", "domainXml", "outputDir"};
-
-    private static final Map<String, Collector> COLLECTORS = Map.ofEntries(
-        entry(PARAMETER_OPTIONS[0], new LogCollector()),
-        entry(PARAMETER_OPTIONS[1], new DomainXmlCollector())
-    );
+    private static final String[] PARAMETER_OPTIONS = {SERVER_LOG_PARAM, DOMAIN_XML_PARAM, OUTPUT_DIR_PARAM};
 
     private static final String LOGGING_CONFIG_FILE_SYS_PROP = "java.util.logging.config.file";
     private static final String DOMAIN_NAME = "DomainName";
     private static final String DOMAIN_XML_FILE_PATH = "DomainXMLFilePath";
     private static final String LOGS_PATH = "LogPath";
 
-    @Param(name = "serverLogs", shortName = "s", optional = true, defaultValue = "true")
+    @Param(name = SERVER_LOG_PARAM, shortName = "s", optional = true, defaultValue = "true")
     private boolean collectServerLog;
 
-    @Param(name = "domainXml", shortName = "d", optional = true, defaultValue = "true")
+    @Param(name = DOMAIN_XML_PARAM, shortName = "d", optional = true, defaultValue = "true")
     private boolean collectDomainXml;
 
-    @Param(name = "outputDir", shortName = "o", optional = false)
+    @Param(name = OUTPUT_DIR_PARAM, shortName = "o", optional = false)
     private String outputDir;
+
+    CollectorService collectorService;
 
     @Override
     protected int executeCommand() throws CommandException {
         parameterMap = populateParameters(new ParameterMap());
         
-        collectorService = new CollectorService(parameterMap, PARAMETER_OPTIONS, COLLECTORS);
+        collectorService = new CollectorService(parameterMap, PARAMETER_OPTIONS);
 
         return collectorService.executCollection();
     }
