@@ -14,7 +14,7 @@ public class UploadAsadmin extends BaseAsadmin {
 
     private static final String USERNAME_PARAM = "serverLogs";
     private static final String PASSWORD_PARAM = "domainXml";
-    private static final String DESTINATION_PARAM = "outputDir";
+    private static final String DESTINATION_PARAM = "destination";
 
     private static final String[] PARAMETER_OPTIONS = {USERNAME_PARAM, PASSWORD_PARAM, DESTINATION_PARAM};
 
@@ -24,7 +24,7 @@ public class UploadAsadmin extends BaseAsadmin {
     @Param(name = PASSWORD_PARAM, shortName = "p", optional = false, password = true)
     private String password;
 
-    @Param(name = DESTINATION_PARAM, shortName = "d", optional = false)
+    @Param(name = DESTINATION_PARAM, shortName = "d", optional = false, acceptableValues = "nexus, zendesk")
     private String destination;
 
     private UploadService uploadService;
