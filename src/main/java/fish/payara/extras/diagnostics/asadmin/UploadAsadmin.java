@@ -1,5 +1,7 @@
 package fish.payara.extras.diagnostics.asadmin;
 
+import java.io.FileNotFoundException;
+
 import org.glassfish.api.Param;
 import org.glassfish.api.admin.CommandException;
 import org.glassfish.api.admin.ParameterMap;
@@ -12,20 +14,24 @@ import fish.payara.extras.diagnostics.upload.UploadService;
 @PerLookup
 public class UploadAsadmin extends BaseAsadmin {
 
-    private static final String USERNAME_PARAM = "serverLogs";
-    private static final String PASSWORD_PARAM = "domainXml";
+    private static final String USERNAME_PARAM = "username";
+    private static final String PASSWORD_PARAM = "user_password";
     private static final String DESTINATION_PARAM = "destination";
+    private static final String FILE_PATH = "filePath";
 
-    private static final String[] PARAMETER_OPTIONS = {USERNAME_PARAM, PASSWORD_PARAM, DESTINATION_PARAM};
+    private static final String[] PARAMETER_OPTIONS = {USERNAME_PARAM, PASSWORD_PARAM, DESTINATION_PARAM, FILE_PATH};
 
     @Param(name = USERNAME_PARAM, shortName = "u", optional = false)
     private String username;
 
-    @Param(name = PASSWORD_PARAM, shortName = "p", optional = false, password = true)
+    @Param(name = PASSWORD_PARAM, shortName = "p", optional = false, password = true, alias = "nexusPassword")
     private String password;
 
     @Param(name = DESTINATION_PARAM, shortName = "d", optional = false, acceptableValues = "nexus, zendesk")
     private String destination;
+
+    @Param(name = FILE_PATH, shortName = "f", optional = false)
+    private String filePath;
 
     private UploadService uploadService;
 
@@ -35,7 +41,13 @@ public class UploadAsadmin extends BaseAsadmin {
 
         uploadService = new UploadService(parameterMap, PARAMETER_OPTIONS);
 
-        return uploadService.executeUpload();
+        try {
+            uploadService.executeUpload();
+        } catch(FileNotFoundException fnfe) {
+            fnfe.printStackTrace();
+        } 
+
+        return 0;
     }
 
     private ParameterMap populateParameters(ParameterMap params) throws CommandException {

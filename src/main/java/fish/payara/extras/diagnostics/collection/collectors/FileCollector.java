@@ -19,7 +19,7 @@ public abstract class FileCollector implements Collector {
     private Path filePath;
     private Path destination;
 
-    private ParameterMap Params;
+    private ParameterMap params;
 
     // java.util.logging.config.file
     // com.sun.enterprise.server.logging.GFFileHandler.file
@@ -78,13 +78,13 @@ public abstract class FileCollector implements Collector {
 
     @Override
     public ParameterMap getParams() {
-        return Params;
+        return params;
     }
 
     @Override
     public void setParams(ParameterMap params) {
         if(params != null) {
-            Params = params;
+            this.params = params;
         }
     }
 

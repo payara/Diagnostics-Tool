@@ -121,47 +121,6 @@
                 </supportedProjectTypes>
             </configuration>
         </plugin>
-        <!-- <plugin>
-            <groupId>org.glassfish.build</groupId>
-            <artifactId>command-security-maven-plugin</artifactId>
-            <version>1.0.10.payara-p1</version>
-            <configuration>
-                <isFailureFatal>false</isFailureFatal>
-            </configuration>
-        </plugin> -->
-        <!-- <plugin>
-            <groupId>org.glassfish.hk2</groupId>
-            <artifactId>config-generator</artifactId>
-            <version>2.5.0-b53</version>
-            <executions>
-                <execution>
-                    <goals>
-                        <goal>generate-injectors</goal>
-                    </goals>
-                </execution>
-            </executions>
-            <configuration>
-                <supportedProjectTypes>jar,glassfish-jar</supportedProjectTypes>
-            </configuration>
-        </plugin> -->
-        <!-- <plugin>
-            <groupId>org.glassfish.hk2</groupId>
-            <artifactId>osgiversion-maven-plugin</artifactId>
-            <version>2.6.1.payara-p1</version>
-            <executions>
-                <execution>
-                    <id>default-compute-osgi-version</id>
-                    <phase>process-classes</phase>
-                    <goals>
-                        <goal>compute-osgi-version</goal>
-                    </goals>
-                </execution>
-            </executions>
-            <configuration>
-                <dropVersionComponent>qualifier</dropVersionComponent>
-                <versionPropertyName>project.osgi.version</versionPropertyName>
-            </configuration>
-        </plugin> -->
     </plugins>
 
     <pluginManagement>
@@ -187,6 +146,9 @@
                             <customClasspathLayout>${artifact.artifactId}.${artifact.extension}</customClasspathLayout>
                         </manifest>
                         <manifestFile>${project.build.directory}/classes/META-INF/MANIFEST.MF</manifestFile>
+                        <manifestEntries>
+                            <Implementation-Version>${project.version}</Implementation-Version>
+                        </manifestEntries>
                     </archive>
                 </configuration>
             </plugin>
