@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -19,10 +20,7 @@ public abstract class FileCollector implements Collector {
     private Path filePath;
     private Path destination;
 
-    private ParameterMap params;
-
-    // java.util.logging.config.file
-    // com.sun.enterprise.server.logging.GFFileHandler.file
+    private Map<String, String> params;
 
     public FileCollector() {}
 
@@ -77,12 +75,12 @@ public abstract class FileCollector implements Collector {
     }
 
     @Override
-    public ParameterMap getParams() {
+    public Map<String, String> getParams() {
         return params;
     }
 
     @Override
-    public void setParams(ParameterMap params) {
+    public void setParams(Map<String, String> params) {
         if(params != null) {
             this.params = params;
         }

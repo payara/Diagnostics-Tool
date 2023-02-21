@@ -1,18 +1,17 @@
 package fish.payara.extras.diagnostics.collection.collectors;
 
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.logging.Logger;
-
-import org.glassfish.api.admin.ParameterMap;
 
 public class DomainXmlCollector extends FileCollector {
     Logger logger = Logger.getLogger(this.getClass().getName());
 
     @Override
     public int collect() {
-        ParameterMap params = getParams();
+        Map<String, String> params = getParams();
         if(params != null) {
-            Path outputPath = getPathFromParams("outputDir", params);
+            Path outputPath = getPathFromParams("dir", params);
             Path domainXmlPath = getPathFromParams("DomainXMLFilePath", params);
             if(domainXmlPath != null && outputPath != null) {
                 setFilePath(domainXmlPath);
@@ -25,10 +24,10 @@ public class DomainXmlCollector extends FileCollector {
         return 1;
     }
 
-    private Path getPathFromParams(String key, ParameterMap parameterMap) {
-        ParameterMap params = parameterMap;
+    private Path getPathFromParams(String key, Map<String, String> parameterMap) {
+        Map<String, String> params = parameterMap;
         if(params != null) {
-            String valueString = params.getOne(key);
+            String valueString = params.get(key);
             if(valueString != null) {
                 Path path = Path.of(valueString);
                 return path;

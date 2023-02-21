@@ -1,8 +1,14 @@
 package fish.payara.extras.diagnostics.asadmin;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
+import com.sun.enterprise.util.OS;
+
+import org.glassfish.api.ExecutionContext;
 import org.glassfish.api.Param;
+import org.glassfish.api.ParamDefaultCalculator;
 import org.glassfish.api.admin.CommandException;
 import org.glassfish.api.admin.ParameterMap;
 import org.glassfish.hk2.api.PerLookup;
@@ -14,11 +20,9 @@ import fish.payara.extras.diagnostics.collection.CollectorService;
 public class CollectAsadmin extends BaseAsadmin {
     private static final String SERVER_LOG_PARAM = "serverLogs";
     private static final String DOMAIN_XML_PARAM = "domainXml";
-    private static final String OUTPUT_DIR_PARAM = "outputDir";
 
-    private static final String[] PARAMETER_OPTIONS = {SERVER_LOG_PARAM, DOMAIN_XML_PARAM, OUTPUT_DIR_PARAM};
+    private static final String[] PARAMETER_OPTIONS = {SERVER_LOG_PARAM, DOMAIN_XML_PARAM, DIR_PARAM};
 
-    private static final String LOGGING_CONFIG_FILE_SYS_PROP = "java.util.logging.config.file";
     private static final String DOMAIN_NAME = "DomainName";
     private static final String DOMAIN_XML_FILE_PATH = "DomainXMLFilePath";
     private static final String LOGS_PATH = "LogPath";
@@ -29,39 +33,39 @@ public class CollectAsadmin extends BaseAsadmin {
     @Param(name = DOMAIN_XML_PARAM, shortName = "d", optional = true, defaultValue = "true")
     private boolean collectDomainXml;
 
-    @Param(name = OUTPUT_DIR_PARAM, shortName = "o", optional = false)
-    private String outputDir;
-
-    CollectorService collectorService;
+    private CollectorService collectorService;
 
     @Override
     protected int executeCommand() throws CommandException {
-        parameterMap = populateParameters(new ParameterMap());
-        
+        parameterMap = populateParameters(new HashMap<String, String>(), PARAMETER_OPTIONS);
+        parameterMap = resolveDir(parameterMap);
+
         collectorService = new CollectorService(parameterMap, PARAMETER_OPTIONS);
 
         return collectorService.executCollection();
     }
 
-    private ParameterMap populateParameters(ParameterMap params) throws CommandException {
-        for(String opt : PARAMETER_OPTIONS) {
-            params.add(opt, getOption(opt));
+    @Override
+    protected Map<String, String> populateParameters(Map<String, String> params, String[] paramOptions) {
+        for(String opt : paramOptions) {
+            params.put(opt, getOption(opt));
         }
 
-        params.add(DOMAIN_XML_FILE_PATH, getDomainXml().getAbsolutePath());
-        params.add(DOMAIN_NAME, getDomainName());
+        params.put(DOMAIN_XML_FILE_PATH, getDomainXml().getAbsolutePath());
+        params.put(DOMAIN_NAME, getDomainName());
 
-        params.add(LOGGING_CONFIG_FILE_SYS_PROP, getLoggingConfigFilePath());
-        params.add(LOGS_PATH, getDomainRootDir().getPath() + "/logs");
+        params.put(LOGS_PATH, getDomainRootDir().getPath() + "/logs");
 
         return params;
     }
 
-    private String getLoggingConfigFilePath() {
-        String loggingConfigFile = getSystemProperty(LOGGING_CONFIG_FILE_SYS_PROP);
-        if(loggingConfigFile != null) {
-            return getSystemProperty(LOGGING_CONFIG_FILE_SYS_PROP);
+    public static class DefaultOutputDirParam extends ParamDefaultCalculator {
+        private static final String OUTPUT_DIR_PARAM_SYS_PROP = "fish.payara.diagnostics.output.path";
+        private static final String JAVA_TEMP_DIR_SYS_PROP = "java.io.tmpdir";
+
+        @Override
+        public String defaultValue(ExecutionContext context) {
+            return System.getProperty(OUTPUT_DIR_PARAM_SYS_PROP, System.getProperty(JAVA_TEMP_DIR_SYS_PROP));
         }
-        return "";
     }
 }

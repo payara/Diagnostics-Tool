@@ -6,18 +6,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Map;
 
-import org.glassfish.api.admin.ParameterMap;
 import org.glassfish.api.logging.LogLevel;
 
 public class LogCollector extends FileCollector {
 
     @Override
     public int collect() {
-        ParameterMap params = getParams();
+        Map<String, String> params = getParams();
         if(params != null) {
-            String logPathString = params.getOne("LogPath");
-            String outputPathString = params.getOne("outputDir");
+            String logPathString = params.get("LogPath");
+            String outputPathString = params.get("dir");
             if(logPathString != null) {
                 Path logPath = Path.of(logPathString);
                 Path outputPath = Path.of(outputPathString);

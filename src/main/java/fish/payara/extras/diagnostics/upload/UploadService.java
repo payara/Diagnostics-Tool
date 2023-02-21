@@ -5,15 +5,16 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 
 import org.glassfish.api.admin.ParameterMap;
 
 import fish.payara.extras.diagnostics.upload.uploaders.NexusAPI;
 
 public class UploadService {
-    private ParameterMap params;
+    private Map<String, String> params;
     
-    public UploadService(ParameterMap params, String[] parameterOptions) {
+    public UploadService(Map<String, String> params, String[] parameterOptions) {
         this.params = params;
     }
 
@@ -21,9 +22,9 @@ public class UploadService {
         NexusAPI nexusAPI = null;
 
         if(params != null) {
-            String filePathString = params.getOne("filePath");
-            String username = params.getOne("username");
-            String password = params.getOne("password");
+            String filePathString = params.get("dir");
+            String username = params.get("username");
+            String password = params.get("password");
 
             if(filePathString != null) {
                 Path filePath = Path.of(filePathString);

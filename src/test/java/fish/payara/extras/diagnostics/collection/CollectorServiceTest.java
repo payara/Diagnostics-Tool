@@ -1,5 +1,6 @@
 package fish.payara.extras.diagnostics.collection;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,10 +33,10 @@ public class CollectorServiceTest {
     @Test
     public void getActiveCollectorsAllFalseTest()
     {
-        ParameterMap params = new ParameterMap();
+        Map<String, String> params = new HashMap<>();
 
         for(String parameter : PARAMETER_OPTIONS) {
-            params.add(parameter, "false");
+            params.put(parameter, "false");
         }
 
         CollectorService collectorService = new CollectorService(params, PARAMETER_OPTIONS);
@@ -47,10 +48,10 @@ public class CollectorServiceTest {
     @Test
     public void getActiveCollectorsAllTrueTest()
     {
-        ParameterMap params = new ParameterMap();
+        Map<String, String> params = new HashMap<>();
 
         for(String parameter : PARAMETER_OPTIONS) {
-            params.add(parameter, "true");
+            params.put(parameter, "true");
         }
 
         CollectorService collectorService = new CollectorService(params, PARAMETER_OPTIONS);
@@ -62,14 +63,14 @@ public class CollectorServiceTest {
     @Test
     public void getActiveCollectorsMixedTest()
     {
-        ParameterMap params = new ParameterMap();
+        Map<String, String> params = new HashMap<>();
 
         for(int i = 0; i < PARAMETER_OPTIONS.length/2; i++) {
-            params.add(PARAMETER_OPTIONS[i], "true");
+            params.put(PARAMETER_OPTIONS[i], "true");
         }
 
         for(int i = PARAMETER_OPTIONS.length/2; i < PARAMETER_OPTIONS.length; i++) {
-            params.add(PARAMETER_OPTIONS[i], "false");
+            params.put(PARAMETER_OPTIONS[i], "false");
         }
 
         CollectorService collectorService = new CollectorService(params, PARAMETER_OPTIONS);
@@ -88,10 +89,10 @@ public class CollectorServiceTest {
 
     @Test
     public void getActiveCollectorsIncompleteTest() {
-        ParameterMap params = new ParameterMap();
+        Map<String, String> params = new HashMap<>();
 
         for(int i = 0; i < PARAMETER_OPTIONS.length/2; i++) {
-            params.add(PARAMETER_OPTIONS[i], "true");
+            params.put(PARAMETER_OPTIONS[i], "true");
         }
 
         CollectorService collectorService = new CollectorService(params, PARAMETER_OPTIONS);
@@ -102,10 +103,10 @@ public class CollectorServiceTest {
 
     @Test
     public void getActiveCollectorsInvalidTest() {
-        ParameterMap params = new ParameterMap();
+        Map<String, String> params = new HashMap<>();
 
         for(String parameter : PARAMETER_OPTIONS) {
-            params.add(parameter, "invalid");
+            params.put(parameter, "invalid");
         }
 
         CollectorService collectorService = new CollectorService(params, PARAMETER_OPTIONS);
@@ -116,10 +117,10 @@ public class CollectorServiceTest {
 
     @Test
     public void getActiveCollectorsEmptyTest() {
-        ParameterMap params = new ParameterMap();
+        Map<String, String> params = new HashMap<>();
 
         for(String parameter : PARAMETER_OPTIONS) {
-            params.add(parameter, "");
+            params.put(parameter, "");
         }
 
         CollectorService collectorService = new CollectorService(params, PARAMETER_OPTIONS);

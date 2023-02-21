@@ -18,10 +18,10 @@ public class CollectorService {
         entry("domainXml", new DomainXmlCollector())
     );
 
-    ParameterMap parameterMap;
+    Map<String, String> parameterMap;
     String[] parameterOptions;
 
-    public CollectorService(ParameterMap params, String[] parameterOptions) {
+    public CollectorService(Map<String, String> params, String[] parameterOptions) {
         this.parameterMap = params;
         this.parameterOptions = parameterOptions;
     }
@@ -39,7 +39,7 @@ public class CollectorService {
         return 0;
     }
 
-    public List<Collector> getActiveCollectors(ParameterMap parameterMap, String[] parameterOptions, Map<String, Collector> collectors) {
+    public List<Collector> getActiveCollectors(Map<String, String> parameterMap, String[] parameterOptions, Map<String, Collector> collectors) {
         List<Collector> activeCollectors = new ArrayList<>();
 
         if(parameterMap == null || parameterOptions == null || collectors == null) {
@@ -47,7 +47,7 @@ public class CollectorService {
         }
 
         for (String parameter : parameterOptions) {
-            String parameterValue = parameterMap.getOne(parameter);
+            String parameterValue = parameterMap.get(parameter);
             Boolean collectorValue = Boolean.valueOf(parameterValue);
             if(collectorValue) {
                 activeCollectors.add(collectors.get(parameter));
