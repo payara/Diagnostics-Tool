@@ -2,6 +2,7 @@ package fish.payara.extras.diagnostics.upload;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -36,7 +37,13 @@ public class UploadService {
                 }
                 
                 if(nexusAPI != null) {
-                    nexusAPI.upload();
+                    try {
+                        nexusAPI.upload();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 } else {
                     return 1;
                 }
