@@ -21,7 +21,7 @@ public class DomainXmlCollector extends FileCollector {
             }
         }
 
-        return 1;
+        return 0;
     }
 
     private Path getPathFromParams(String key, Map<String, String> parameterMap) {

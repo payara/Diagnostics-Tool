@@ -9,7 +9,6 @@ import java.util.logging.Logger;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
-import org.glassfish.api.admin.ParameterMap;
 import org.glassfish.api.logging.LogLevel;
 
 import fish.payara.extras.diagnostics.collection.Collector;
@@ -42,11 +41,11 @@ public abstract class FileCollector implements Collector {
         try {
             if(confirmPath(filePath, false) && confirmPath(destination, true)) {
                 Files.copy(filePath, destination.resolve(filePath.getFileName()), REPLACE_EXISTING);
-                return 1;
             }
         } catch (IOException ie) {
             logger.log(LogLevel.SEVERE, "Could not copy path from " + filePath + " to " + destination);
             ie.printStackTrace();
+            return 1;
         }
         
         return 0;
@@ -65,7 +64,6 @@ public abstract class FileCollector implements Collector {
                         logger.log(LogLevel.WARNING, "Could not create file at " + path.toString());
                         return false;
                     }
-                    
                     //Path is confirmed if it exists.
                     return Files.exists(path);
                 }

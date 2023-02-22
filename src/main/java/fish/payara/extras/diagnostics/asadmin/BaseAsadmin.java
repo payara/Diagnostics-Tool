@@ -1,8 +1,10 @@
 package fish.payara.extras.diagnostics.asadmin;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
-
-import javax.annotation.PostConstruct;
+import java.util.logging.Level;
 
 import org.glassfish.api.ExecutionContext;
 import org.glassfish.api.Param;
@@ -11,10 +13,12 @@ import org.glassfish.api.ParamDefaultCalculator;
 import com.sun.enterprise.admin.servermgmt.cli.LocalDomainCommand;
 
 public abstract class BaseAsadmin extends LocalDomainCommand {
-    protected static final String DIR_PARAM = "dir";
-    protected static final String DIR_NAME = "/output-" + System.currentTimeMillis();
+    private static final String OUTPUT_DIR_PARAM_SYS_PROP = "fish.payara.diagnostics.path";
 
-    @Param(name = DIR_PARAM, shortName = "d", optional = true, defaultCalculator = DefaultOutputDirParam.class)
+    protected static final String DIR_PARAM = "dir";
+    protected static final String DIR_NAME = "/payara-diagnostics-" + System.currentTimeMillis();
+
+    @Param(name = DIR_PARAM, shortName = "f", optional = true, defaultCalculator = DefaultOutputDirParam.class)
     protected String dir;
 
     protected Map<String, String> parameterMap;
@@ -24,16 +28,14 @@ public abstract class BaseAsadmin extends LocalDomainCommand {
             return params;
         }
 
-        if(getOption(DIR_PARAM) == null) {
-            if(dir != null) {
+        if(dir != null) {
+            if(Files.isDirectory(Path.of(dir))) {
                 dir = dir + DIR_NAME;
-                if(params.containsKey(DIR_PARAM)) {
-                    params.replace(DIR_PARAM, dir);
-                } else {
-                    params.put(DIR_PARAM, dir);
-                }
             }
+            params.put(DIR_PARAM, dir);
         }
+
+        logger.log(Level.INFO, "Directory selected {0} ", dir);
 
         return params;
     }
@@ -47,12 +49,11 @@ public abstract class BaseAsadmin extends LocalDomainCommand {
     }
 
     public static class DefaultOutputDirParam extends ParamDefaultCalculator {
-        private static final String OUTPUT_DIR_PARAM_SYS_PROP = "fish.payara.diagnostics.path";
-        private static final String JAVA_TEMP_DIR_SYS_PROP = "user.home";
+        private static final String JAV_DIR_SYS_PROP = "user.home";
 
         @Override
         public String defaultValue(ExecutionContext context) {
-            return System.getProperty(OUTPUT_DIR_PARAM_SYS_PROP, System.getProperty(JAVA_TEMP_DIR_SYS_PROP));
+            return System.getProperty(OUTPUT_DIR_PARAM_SYS_PROP, System.getProperty(JAV_DIR_SYS_PROP));
         }
     }
 }

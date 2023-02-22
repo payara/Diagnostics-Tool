@@ -1,22 +1,38 @@
 package fish.payara.extras.diagnostics.collection;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import org.glassfish.api.logging.LogLevel;
+
 import static java.util.Map.entry;
 
-import org.glassfish.api.admin.ParameterMap;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import fish.payara.extras.diagnostics.collection.collectors.DomainXmlCollector;
 import fish.payara.extras.diagnostics.collection.collectors.LogCollector;
 
 
 public class CollectorService {
+    Logger logger = Logger.getLogger(this.getClass().getName());
     
     private static final Map<String, Collector> COLLECTORS = Map.ofEntries(
         entry("serverLogs", new LogCollector()),
         entry("domainXml", new DomainXmlCollector())
     );
+
+    private static final String DIR_PARAM = "dir";
 
     Map<String, String> parameterMap;
     String[] parameterOptions;
@@ -29,14 +45,76 @@ public class CollectorService {
     public int executCollection() {
         List<Collector> activeCollectors = getActiveCollectors(parameterMap, parameterOptions, COLLECTORS);
 
+        int result = 0;
         if(activeCollectors.size() != 0) {
             for(Collector collector : activeCollectors) {
                 collector.setParams(parameterMap);
-                collector.collect();
+                result = collector.collect();
+                if(result != 0) {
+                    return result;
+                }
             }
         }
 
-        return 0;
+        File file = new File(parameterMap.get(DIR_PARAM));
+
+        try (FileOutputStream fileOutputStream = new FileOutputStream(file.getAbsolutePath() + ".zip")) {
+            ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream);
+            compressDirectory(file, file.getName(), zipOutputStream);
+            zipOutputStream.close();
+
+            cleanUpDirectory(file);
+        } catch (IOException e) {
+            logger.log(LogLevel.SEVERE, "Could not zip collected files.");
+            return 1;
+        }
+    
+        return result;
+    }
+
+    private void compressDirectory(File file, String fileName, ZipOutputStream zipOutputStream) throws IOException {
+        if(file.isHidden()) {
+            return;
+        }
+
+        if(file.isDirectory()) {
+
+            zipOutputStream.putNextEntry(fileName.endsWith(File.separator) ? new ZipEntry(fileName) : new ZipEntry(fileName + File.separator));
+
+            File[] children = file.listFiles();
+            for(File childFile : children) {
+                compressDirectory(childFile, fileName + File.separator + childFile.getName(), zipOutputStream);
+            }
+            return;
+        }
+
+        FileInputStream fileInputStream = new FileInputStream(file);
+        ZipEntry zipEntry = new ZipEntry(fileName);
+        zipOutputStream.putNextEntry(zipEntry);
+        byte[] bytes = new byte[1024];
+        int length;
+        while((length = fileInputStream.read(bytes)) >= 0) {
+            zipOutputStream.write(bytes, 0, length);
+        }
+
+        fileInputStream.close();
+    }
+
+    private void cleanUpDirectory(File dir) throws IOException {
+        Path path = dir.toPath();
+        try(Stream<Path> walk = Files.walk(path)) {
+            walk
+            .sorted(Comparator.reverseOrder())
+            .forEach(x -> deleteDirectory(x));
+        }
+    }
+
+    private void deleteDirectory(Path path) {
+        try {
+            Files.delete(path);
+        } catch(IOException e) {
+            logger.log(LogLevel.INFO, "Could not cleanup directory at {0}", path.toString());
+        }
     }
 
     public List<Collector> getActiveCollectors(Map<String, String> parameterMap, String[] parameterOptions, Map<String, Collector> collectors) {

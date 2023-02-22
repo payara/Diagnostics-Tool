@@ -1,4 +1,4 @@
-package fish.payara.extras.diagnostics.upload.util;
+package fish.payara.extras.diagnostics.util;
 
 import java.io.IOException;
 import java.io.InputStream;

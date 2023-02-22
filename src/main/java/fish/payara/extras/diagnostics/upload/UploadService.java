@@ -7,8 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 
-import org.glassfish.api.admin.ParameterMap;
-
 import fish.payara.extras.diagnostics.upload.uploaders.NexusAPI;
 
 public class UploadService {
@@ -39,20 +37,18 @@ public class UploadService {
                 
                 if(nexusAPI != null) {
                     try {
-                        nexusAPI.upload();
+                        return nexusAPI.upload();
                     } catch (IOException e) {
                         e.printStackTrace();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                } else {
-                    return 1;
                 }
                 
             }
         }
 
-        return 0;
+        return 1;
     }
 
 }

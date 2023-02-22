@@ -2,15 +2,9 @@ package fish.payara.extras.diagnostics.asadmin;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
-import com.sun.enterprise.util.OS;
-
-import org.glassfish.api.ExecutionContext;
 import org.glassfish.api.Param;
-import org.glassfish.api.ParamDefaultCalculator;
 import org.glassfish.api.admin.CommandException;
-import org.glassfish.api.admin.ParameterMap;
 import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
 import fish.payara.extras.diagnostics.collection.CollectorService;
@@ -57,15 +51,5 @@ public class CollectAsadmin extends BaseAsadmin {
         params.put(LOGS_PATH, getDomainRootDir().getPath() + "/logs");
 
         return params;
-    }
-
-    public static class DefaultOutputDirParam extends ParamDefaultCalculator {
-        private static final String OUTPUT_DIR_PARAM_SYS_PROP = "fish.payara.diagnostics.output.path";
-        private static final String JAVA_TEMP_DIR_SYS_PROP = "java.io.tmpdir";
-
-        @Override
-        public String defaultValue(ExecutionContext context) {
-            return System.getProperty(OUTPUT_DIR_PARAM_SYS_PROP, System.getProperty(JAVA_TEMP_DIR_SYS_PROP));
-        }
     }
 }
