@@ -23,7 +23,6 @@ import java.nio.file.Path;
 import fish.payara.extras.diagnostics.collection.collectors.DomainXmlCollector;
 import fish.payara.extras.diagnostics.collection.collectors.LogCollector;
 
-
 public class CollectorService {
     Logger logger = Logger.getLogger(this.getClass().getName());
     
@@ -68,6 +67,9 @@ public class CollectorService {
             logger.log(LogLevel.SEVERE, "Could not zip collected files.");
             return 1;
         }
+
+        //Save output to properties, to make uplaod seamless for the user
+        
     
         return result;
     }

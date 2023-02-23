@@ -8,6 +8,7 @@ import org.glassfish.api.admin.CommandException;
 import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
 import fish.payara.extras.diagnostics.collection.CollectorService;
+import fish.payara.extras.diagnostics.util.PropertiesFile;
 
 @Service(name = "collect")
 @PerLookup
@@ -35,6 +36,9 @@ public class CollectAsadmin extends BaseAsadmin {
         parameterMap = resolveDir(parameterMap);
 
         collectorService = new CollectorService(parameterMap, PARAMETER_OPTIONS);
+
+        PropertiesFile props = getProperties();
+        props.store(DIR_PARAM, parameterMap.get(DIR_PARAM));
 
         return collectorService.executCollection();
     }

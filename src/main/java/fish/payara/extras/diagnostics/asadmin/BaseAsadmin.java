@@ -1,5 +1,4 @@
 package fish.payara.extras.diagnostics.asadmin;
-
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,14 +11,25 @@ import org.glassfish.api.ParamDefaultCalculator;
 
 import com.sun.enterprise.admin.servermgmt.cli.LocalDomainCommand;
 
+import fish.payara.extras.diagnostics.util.PropertiesFile;
+
 public abstract class BaseAsadmin extends LocalDomainCommand {
     private static final String OUTPUT_DIR_PARAM_SYS_PROP = "fish.payara.diagnostics.path";
+    private static final String PROPERTIES_PATH_SYS_PROP = "fish.payara.properties.path";
+    private static final String PROPERTIES_FILE_NAME = ".properties";
+
+    private static final String JAV_DIR_SYS_PROP = "user.home";
 
     protected static final String DIR_PARAM = "dir";
     protected static final String DIR_NAME = "/payara-diagnostics-" + System.currentTimeMillis();
 
-    @Param(name = DIR_PARAM, shortName = "f", optional = true, defaultCalculator = DefaultOutputDirParam.class)
+    private static final String PROPERTIES_PARAM = "properties";
+
+    @Param(name = DIR_PARAM, shortName = "f", optional = true, defaultCalculator = DefaultOutputDirCalculator.class)
     protected String dir;
+
+    @Param(name = PROPERTIES_PARAM, shortName = "p", optional = true, defaultCalculator = DefaultPropertiesPathCalculator.class)
+    protected String propertiesPath;
 
     protected Map<String, String> parameterMap;
 
@@ -48,12 +58,25 @@ public abstract class BaseAsadmin extends LocalDomainCommand {
         return params;
     }
 
-    public static class DefaultOutputDirParam extends ParamDefaultCalculator {
-        private static final String JAV_DIR_SYS_PROP = "user.home";
+    protected PropertiesFile getProperties() {
+        if(propertiesPath != null) {
+            Path path = Path.of(propertiesPath);
+            return new PropertiesFile(path);
+        }
+        return null;
+    }
 
+    public static class DefaultOutputDirCalculator extends ParamDefaultCalculator {
         @Override
         public String defaultValue(ExecutionContext context) {
             return System.getProperty(OUTPUT_DIR_PARAM_SYS_PROP, System.getProperty(JAV_DIR_SYS_PROP));
+        }
+    }
+
+    public static class DefaultPropertiesPathCalculator extends ParamDefaultCalculator {
+        @Override
+        public String defaultValue(ExecutionContext context) {
+            return System.getProperty(PROPERTIES_PATH_SYS_PROP, System.getProperty(JAV_DIR_SYS_PROP) + "/" + PROPERTIES_FILE_NAME);
         }
     }
 }

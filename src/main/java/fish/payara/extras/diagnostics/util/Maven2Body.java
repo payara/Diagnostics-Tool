@@ -3,14 +3,6 @@ package fish.payara.extras.diagnostics.util;
 import java.nio.file.Path;
 
 public class Maven2Body {
-    //          addPart("maven2.asset1", file.toPath())
-    //         .addPart("maven2.asset1.extension", "zip")
-    //         .addPart("maven2.groupId", "fish.payara.extras")
-    //         .addPart("maven2.artifactId", "diagnostics-tool")
-    //         .addPart("maven2.version", getClass().getPackage().getImplementationVersion())
-    //         .addPart("maven2.packaging", "zip")
-    //         .addPart("maven2.generate-pom", "true");
-
     private Path asset;
     private String extension;
     private String groupId;
