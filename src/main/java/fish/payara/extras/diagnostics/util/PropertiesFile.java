@@ -16,13 +16,14 @@ public class PropertiesFile {
     Logger logger = Logger.getLogger(this.getClass().getName());
 
     private Path path;
+    private Properties props;
 
     public PropertiesFile(Path path) {
         this.path = path;
+        this.props = new Properties();
     }   
 
     public void store(String key, String value) {
-        Properties props = new Properties();
         try(OutputStream out = new FileOutputStream(path.toString())) {
             props.setProperty(key, value);
             props.store(out, null);
@@ -35,7 +36,6 @@ public class PropertiesFile {
     }
 
     public String get(String key) {
-        Properties props = new Properties();
         try(InputStream in = new FileInputStream(path.toString())) {
             props.load(in);
             return props.getProperty(key);
@@ -46,7 +46,7 @@ public class PropertiesFile {
             io.printStackTrace();
         }
         
-        return "";
+        return null;
     }
 
     public Path getPath() {
