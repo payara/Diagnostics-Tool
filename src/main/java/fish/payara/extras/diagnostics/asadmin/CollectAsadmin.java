@@ -8,19 +8,20 @@ import org.glassfish.api.admin.CommandException;
 import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
 import fish.payara.extras.diagnostics.collection.CollectorService;
+import fish.payara.extras.diagnostics.util.ParamConstants;
 import fish.payara.extras.diagnostics.util.PropertiesFile;
 
 @Service(name = "collect")
 @PerLookup
 public class CollectAsadmin extends BaseAsadmin {
-    private static final String SERVER_LOG_PARAM = "serverLogs";
-    private static final String DOMAIN_XML_PARAM = "domainXml";
+    private static final String SERVER_LOG_PARAM = ParamConstants.SERVER_LOG_PARAM;
+    private static final String DOMAIN_XML_PARAM = ParamConstants.DOMAIN_XML_PARAM;
 
     private static final String[] PARAMETER_OPTIONS = {SERVER_LOG_PARAM, DOMAIN_XML_PARAM, DIR_PARAM};
 
-    private static final String DOMAIN_NAME = "DomainName";
-    private static final String DOMAIN_XML_FILE_PATH = "DomainXMLFilePath";
-    private static final String LOGS_PATH = "LogPath";
+    private static final String DOMAIN_NAME = ParamConstants.DOMAIN_NAME;
+    private static final String DOMAIN_XML_FILE_PATH = ParamConstants.DOMAIN_XML_FILE_PATH;
+    private static final String LOGS_PATH = ParamConstants.LOGS_PATH;
 
     @Param(name = SERVER_LOG_PARAM, shortName = "s", optional = true, defaultValue = "true")
     private boolean collectServerLog;

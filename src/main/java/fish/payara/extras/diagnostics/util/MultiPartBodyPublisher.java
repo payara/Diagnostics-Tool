@@ -7,17 +7,15 @@ import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Supplier;
 
+/**
+ * ittupelo, Naman, (2019) MultiPartBodyPublisher source code (Version 1.0) [Source Code]. https://stackoverflow.com/questions/46392160/java-9-httpclient-send-a-multipart-form-data-request/54675316#54675316
+ */
 public class MultiPartBodyPublisher {
-    private static final String BOUNDARY = UUID.randomUUID().toString();
-    
     private List<PartsSpecification> partsSpecificationList = new ArrayList<>();
+    private String boundary = UUID.randomUUID().toString();
 
     public HttpRequest.BodyPublisher build() {
         if (partsSpecificationList.size() == 0) {
@@ -28,7 +26,7 @@ public class MultiPartBodyPublisher {
     }
 
     public String getBoundary() {
-        return BOUNDARY;
+        return boundary;
     }
 
     public MultiPartBodyPublisher addPart(String name, String value) {
@@ -63,7 +61,7 @@ public class MultiPartBodyPublisher {
     private void addFinalBoundaryPart() {
         PartsSpecification newPart = new PartsSpecification();
         newPart.type = PartsSpecification.TYPE.FINAL_BOUNDARY;
-        newPart.value = "--" + BOUNDARY + "--";
+        newPart.value = "--" + boundary + "--";
         partsSpecificationList.add(newPart);
     }
 
@@ -125,7 +123,7 @@ public class MultiPartBodyPublisher {
                 PartsSpecification nextPart = iter.next();
                 if (PartsSpecification.TYPE.STRING.equals(nextPart.type)) {
                     String part =
-                            "--" + BOUNDARY + "\r\n" +
+                            "--" + boundary + "\r\n" +
                             "Content-Disposition: form-data; name=" + nextPart.name + "\r\n" +
                             "Content-Type: text/plain; charset=UTF-8\r\n\r\n" +
                             nextPart.value + "\r\n";
@@ -149,7 +147,7 @@ public class MultiPartBodyPublisher {
                     currentFileInput = nextPart.stream.get();
                 }
                 String partHeader =
-                        "--" + BOUNDARY + "\r\n" +
+                        "--" + boundary + "\r\n" +
                         "Content-Disposition: form-data; name=" + nextPart.name + "; filename=" + filename + "\r\n" +
                         "Content-Type: " + contentType + "\r\n\r\n";
                 return partHeader.getBytes(StandardCharsets.UTF_8);

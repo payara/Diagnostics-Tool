@@ -15,6 +15,7 @@ import org.glassfish.hk2.api.PerLookup;
 import org.jvnet.hk2.annotations.Service;
 
 import fish.payara.extras.diagnostics.upload.UploadService;
+import fish.payara.extras.diagnostics.util.ParamConstants;
 import fish.payara.extras.diagnostics.util.PropertiesFile;
 
 @Service(name = "upload")
@@ -22,24 +23,28 @@ import fish.payara.extras.diagnostics.util.PropertiesFile;
 public class UploadAsadmin extends BaseAsadmin {
     Logger logger = Logger.getLogger(this.getClass().getName());
 
-    private static final String USERNAME_PARAM = "username";
-    private static final String PASSWORD_PARAM = "password";
-    private static final String UPLOAD_DESTINATION_PARAM = "destination";
+    private static final String USERNAME_PARAM = ParamConstants.USERNAME_PARAM;
+    private static final String PASSWORD_PARAM = ParamConstants.PASSWORD_PARAM;
+    private static final String UPLOAD_DESTINATION_PARAM = ParamConstants.UPLOAD_DESTINATION_PARAM;
+    private static final String TICKET_NUM_PARAM = ParamConstants.TICKET_NUM_PARAM;
 
-    private static final String[] PARAMETER_OPTIONS = {USERNAME_PARAM, PASSWORD_PARAM, UPLOAD_DESTINATION_PARAM, DIR_PARAM};
+    private static final String[] PARAMETER_OPTIONS = {USERNAME_PARAM, PASSWORD_PARAM, UPLOAD_DESTINATION_PARAM, DIR_PARAM, TICKET_NUM_PARAM};
 
     @Param(name = USERNAME_PARAM, shortName = "u", optional = false)
     private String username;
 
-    @Param(name = PASSWORD_PARAM, shortName="p", optional = false, password = true)
+    @Param(name = PASSWORD_PARAM, shortName="p", optional = false, password=true)
     private String password;
 
-    @Param(name = UPLOAD_DESTINATION_PARAM, shortName="d", optional = false, acceptableValues = "nexus, zendesk")
+    @Param(name = UPLOAD_DESTINATION_PARAM, shortName="d", optional = false, acceptableValues = ParamConstants.NEXUS + ", " + ParamConstants.ZENDESK)
     private String destination;
 
     //Dir param is not optional for upload. Override the value from BaseAsadmin.
     @Param(name = DIR_PARAM, shortName = "f", optional = true)
     protected String dir;
+
+    @Param(name = TICKET_NUM_PARAM, shortName = "t", optional = true)
+    protected String ticketNum;
 
     private UploadService uploadService;
 
@@ -48,7 +53,7 @@ public class UploadAsadmin extends BaseAsadmin {
         parameterMap = populateParameters(new HashMap<>(), PARAMETER_OPTIONS);
         resolveDir(parameterMap);
 
-        uploadService = new UploadService(parameterMap, PARAMETER_OPTIONS);
+        uploadService = new UploadService(parameterMap);
 
         try {
             return uploadService.executeUpload();

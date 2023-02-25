@@ -10,14 +10,16 @@ import java.util.Map;
 
 import org.glassfish.api.logging.LogLevel;
 
+import fish.payara.extras.diagnostics.util.ParamConstants;
+
 public class LogCollector extends FileCollector {
 
     @Override
     public int collect() {
         Map<String, String> params = getParams();
         if(params != null) {
-            String logPathString = params.get("LogPath");
-            String outputPathString = params.get("dir");
+            String logPathString = params.get(ParamConstants.LOGS_PATH);
+            String outputPathString = params.get(ParamConstants.DIR_PARAM);
             if(logPathString != null) {
                 Path logPath = Path.of(logPathString);
                 Path outputPath = Path.of(outputPathString);

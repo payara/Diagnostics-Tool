@@ -56,11 +56,9 @@ public class NexusAPI implements Uploader {
      * Constructs a Maven2 body as requested by Nexus, then uses a {@link MultiPartBodyPublisher} to upload to the provided nexus URL, using multipart/form-data.
      * 
      * @return int
-     * @throws IOException
-     * @throws InterruptedException
      */
     @Override
-    public int upload() throws IOException, InterruptedException {
+    public int upload() {
 
         Maven2Body maven2Body = new Maven2Body().newBuilder()
             .asset(file.toPath())
@@ -87,19 +85,27 @@ public class NexusAPI implements Uploader {
             .uri(uri)
             .header(CONTENT_TYPE, CONTENT_TYPE_MULTIPART_BOUNDARY + publisher.getBoundary())
             .header(AUTHORIZATION_HEADER, getAuthString(username, password))
-            .timeout(Duration.ofMinutes(5))
+            .timeout(Duration.ofMinutes(2))
             .POST(publisher.build())
             .build();
 
         logger.log(LogLevel.INFO, "Starting upload to {0}", uri.toString());
         
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        try {
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            int responseCode = response.statusCode();
+            logger.log(LogLevel.INFO, "Server Responded with {0}", responseCode);
 
-        int responseCode = response.statusCode();
-        logger.log(LogLevel.INFO, "Server Responded with {0}", responseCode);
-
-        if(responseCode != SUCCESS_HTTP_RESPONSE_CODE) {
-            return 1;
+            if(responseCode != SUCCESS_HTTP_RESPONSE_CODE) {
+                return 1;
+            }
+        
+        } catch (IOException e) {
+            logger.log(LogLevel.SEVERE, "IOException occured trying to send to {0}", NEXUS_URL);
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            logger.log(LogLevel.SEVERE, "InterruptedException occured trying to send to {0}", NEXUS_URL);
+            e.printStackTrace();
         }
 
         return 0;

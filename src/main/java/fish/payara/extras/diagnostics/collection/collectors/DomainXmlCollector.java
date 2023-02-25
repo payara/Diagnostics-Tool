@@ -4,6 +4,8 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import fish.payara.extras.diagnostics.util.ParamConstants;
+
 public class DomainXmlCollector extends FileCollector {
     Logger logger = Logger.getLogger(this.getClass().getName());
 
@@ -11,8 +13,8 @@ public class DomainXmlCollector extends FileCollector {
     public int collect() {
         Map<String, String> params = getParams();
         if(params != null) {
-            Path outputPath = getPathFromParams("dir", params);
-            Path domainXmlPath = getPathFromParams("DomainXMLFilePath", params);
+            Path outputPath = getPathFromParams(ParamConstants.DIR_PARAM, params);
+            Path domainXmlPath = getPathFromParams(ParamConstants.DOMAIN_XML_FILE_PATH, params);
             if(domainXmlPath != null && outputPath != null) {
                 setFilePath(domainXmlPath);
                 setDestination(outputPath);

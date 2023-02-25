@@ -11,19 +11,19 @@ import org.glassfish.api.ParamDefaultCalculator;
 
 import com.sun.enterprise.admin.servermgmt.cli.LocalDomainCommand;
 
+import fish.payara.extras.diagnostics.util.ParamConstants;
 import fish.payara.extras.diagnostics.util.PropertiesFile;
 
 public abstract class BaseAsadmin extends LocalDomainCommand {
     private static final String OUTPUT_DIR_PARAM_SYS_PROP = "fish.payara.diagnostics.path";
     private static final String PROPERTIES_PATH_SYS_PROP = "fish.payara.properties.path";
-    private static final String PROPERTIES_FILE_NAME = ".properties";
-
     private static final String JAV_DIR_SYS_PROP = "user.home";
 
-    protected static final String DIR_PARAM = "dir";
+    protected static final String DIR_PARAM = ParamConstants.DIR_PARAM;
     protected static final String DIR_NAME = "/payara-diagnostics-" + System.currentTimeMillis();
 
-    private static final String PROPERTIES_PARAM = "properties";
+    private static final String PROPERTIES_PARAM = ParamConstants.PROPERTIES_PARAM;
+    private static final String PROPERTIES_FILE_NAME = "." + PROPERTIES_PARAM;
 
     @Param(name = DIR_PARAM, shortName = "f", optional = true, defaultCalculator = DefaultOutputDirCalculator.class)
     protected String dir;

@@ -22,16 +22,15 @@ import java.nio.file.Path;
 
 import fish.payara.extras.diagnostics.collection.collectors.DomainXmlCollector;
 import fish.payara.extras.diagnostics.collection.collectors.LogCollector;
+import fish.payara.extras.diagnostics.util.ParamConstants;
 
 public class CollectorService {
     Logger logger = Logger.getLogger(this.getClass().getName());
     
     private static final Map<String, Collector> COLLECTORS = Map.ofEntries(
-        entry("serverLogs", new LogCollector()),
-        entry("domainXml", new DomainXmlCollector())
+        entry(ParamConstants.SERVER_LOG_PARAM, new LogCollector()),
+        entry(ParamConstants.DOMAIN_XML_PARAM, new DomainXmlCollector())
     );
-
-    private static final String DIR_PARAM = "dir";
 
     Map<String, String> parameterMap;
     String[] parameterOptions;
@@ -55,7 +54,7 @@ public class CollectorService {
             }
         }
 
-        File file = new File(parameterMap.get(DIR_PARAM));
+        File file = new File(parameterMap.get(ParamConstants.DIR_PARAM));
 
         try (FileOutputStream fileOutputStream = new FileOutputStream(file.getAbsolutePath() + ".zip")) {
             ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream);
@@ -70,7 +69,6 @@ public class CollectorService {
 
         //Save output to properties, to make uplaod seamless for the user
         
-    
         return result;
     }
 
