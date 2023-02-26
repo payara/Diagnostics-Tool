@@ -11,7 +11,7 @@ import fish.payara.extras.diagnostics.collection.CollectorService;
 import fish.payara.extras.diagnostics.util.ParamConstants;
 import fish.payara.extras.diagnostics.util.PropertiesFile;
 
-@Service(name = "collect")
+@Service(name = "collect-diagnostics")
 @PerLookup
 public class CollectAsadmin extends BaseAsadmin {
     private static final String SERVER_LOG_PARAM = ParamConstants.SERVER_LOG_PARAM;
@@ -31,6 +31,16 @@ public class CollectAsadmin extends BaseAsadmin {
 
     private CollectorService collectorService;
 
+    
+    /** 
+     * Execute asadmin command Collect.
+     * 
+     * 0 - success
+     * 1 - failure
+     * 
+     * @return int
+     * @throws CommandException
+     */
     @Override
     protected int executeCommand() throws CommandException {
         parameterMap = populateParameters(new HashMap<String, String>(), PARAMETER_OPTIONS);
@@ -44,11 +54,16 @@ public class CollectAsadmin extends BaseAsadmin {
         return collectorService.executCollection();
     }
 
+    /** 
+     * Populates parameters with Parameter options into a map. Overriden method add some more additionaly properties required by the collect command.
+     * 
+     * @param params
+     * @param paramOptions
+     * @return Map<String, String>
+     */
     @Override
     protected Map<String, String> populateParameters(Map<String, String> params, String[] paramOptions) {
-        for(String opt : paramOptions) {
-            params.put(opt, getOption(opt));
-        }
+        params = super.populateParameters(params, paramOptions);
 
         params.put(DOMAIN_XML_FILE_PATH, getDomainXml().getAbsolutePath());
         params.put(DOMAIN_NAME, getDomainName());

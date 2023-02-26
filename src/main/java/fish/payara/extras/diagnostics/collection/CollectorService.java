@@ -40,6 +40,15 @@ public class CollectorService {
         this.parameterOptions = parameterOptions;
     }
 
+    
+    /** 
+     * Executes collection of all specified collectors.
+     * 
+     * 0 - Success
+     * 1 - Failure
+     * 
+     * @return int
+     */
     public int executCollection() {
         List<Collector> activeCollectors = getActiveCollectors(parameterMap, parameterOptions, COLLECTORS);
 
@@ -72,6 +81,15 @@ public class CollectorService {
         return result;
     }
 
+    
+    /** 
+     * Compresses the collected directory into a zip folder.
+     * 
+     * @param file
+     * @param fileName
+     * @param zipOutputStream
+     * @throws IOException
+     */
     private void compressDirectory(File file, String fileName, ZipOutputStream zipOutputStream) throws IOException {
         if(file.isHidden()) {
             return;
@@ -100,6 +118,13 @@ public class CollectorService {
         fileInputStream.close();
     }
 
+    
+    /** 
+     * Removes specified directory.
+     * 
+     * @param dir
+     * @throws IOException
+     */
     private void cleanUpDirectory(File dir) throws IOException {
         Path path = dir.toPath();
         try(Stream<Path> walk = Files.walk(path)) {
@@ -109,6 +134,12 @@ public class CollectorService {
         }
     }
 
+    
+    /** 
+     * Utility method for directory cleanup. Removes files at specified path.
+     * 
+     * @param path
+     */
     private void deleteDirectory(Path path) {
         try {
             Files.delete(path);
@@ -117,6 +148,15 @@ public class CollectorService {
         }
     }
 
+    
+    /** 
+     * Returns list of collectors which are enabled from user parameters.
+     * 
+     * @param parameterMap
+     * @param parameterOptions
+     * @param collectors
+     * @return List<Collector>
+     */
     public List<Collector> getActiveCollectors(Map<String, String> parameterMap, String[] parameterOptions, Map<String, Collector> collectors) {
         List<Collector> activeCollectors = new ArrayList<>();
 

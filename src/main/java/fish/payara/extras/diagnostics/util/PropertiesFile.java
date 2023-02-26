@@ -23,6 +23,12 @@ public class PropertiesFile {
         this.props = new Properties();
     }   
 
+    /**
+     * Store method takes a key value pair, and stores in a properties file.
+     * 
+     * @param key
+     * @param value
+     */
     public void store(String key, String value) {
         try(OutputStream out = new FileOutputStream(path.toString())) {
             props.setProperty(key, value);
@@ -35,6 +41,12 @@ public class PropertiesFile {
         }
     }
 
+    /**
+     * Retrieves value based on key from the properties file.
+     * 
+     * @param key
+     * @return String
+     */
     public String get(String key) {
         try(InputStream in = new FileInputStream(path.toString())) {
             props.load(in);
@@ -49,6 +61,10 @@ public class PropertiesFile {
         return null;
     }
 
+    /**
+     * Returns properties file path.
+     * @return Path
+     */
     public Path getPath() {
         return this.path;
     }

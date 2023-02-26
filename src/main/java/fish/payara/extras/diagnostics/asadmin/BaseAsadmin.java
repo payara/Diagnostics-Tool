@@ -1,5 +1,4 @@
 package fish.payara.extras.diagnostics.asadmin;
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -33,6 +32,13 @@ public abstract class BaseAsadmin extends LocalDomainCommand {
 
     protected Map<String, String> parameterMap;
 
+    
+    /** 
+     * Configures a valid directory to use in commands.
+     * 
+     * @param params
+     * @return Map<String, String>
+     */
     protected Map<String, String> resolveDir(Map<String, String> params) {
         if(params == null) {
             return params;
@@ -50,6 +56,14 @@ public abstract class BaseAsadmin extends LocalDomainCommand {
         return params;
     }
 
+    
+    /** 
+     * Populates parameters with Parameter options into a map.
+     * 
+     * @param params
+     * @param paramOptions
+     * @return Map<String, String>
+     */
     protected Map<String, String> populateParameters(Map<String, String> params, String[] paramOptions) {
         for(String opt : paramOptions) {
             params.put(opt, getOption(opt));
@@ -58,6 +72,12 @@ public abstract class BaseAsadmin extends LocalDomainCommand {
         return params;
     }
 
+    
+    /** 
+     * If a properties file path exists, return a new properties file at that path.
+     * 
+     * @return PropertiesFile
+     */
     protected PropertiesFile getProperties() {
         if(propertiesPath != null) {
             Path path = Path.of(propertiesPath);

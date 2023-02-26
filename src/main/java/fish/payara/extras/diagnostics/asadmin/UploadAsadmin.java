@@ -18,7 +18,7 @@ import fish.payara.extras.diagnostics.upload.UploadService;
 import fish.payara.extras.diagnostics.util.ParamConstants;
 import fish.payara.extras.diagnostics.util.PropertiesFile;
 
-@Service(name = "upload")
+@Service(name = "upload-diagnostics")
 @PerLookup
 public class UploadAsadmin extends BaseAsadmin {
     Logger logger = Logger.getLogger(this.getClass().getName());
@@ -39,7 +39,6 @@ public class UploadAsadmin extends BaseAsadmin {
     @Param(name = UPLOAD_DESTINATION_PARAM, shortName="d", optional = false, acceptableValues = ParamConstants.NEXUS + ", " + ParamConstants.ZENDESK)
     private String destination;
 
-    //Dir param is not optional for upload. Override the value from BaseAsadmin.
     @Param(name = DIR_PARAM, shortName = "f", optional = true)
     protected String dir;
 
@@ -48,6 +47,13 @@ public class UploadAsadmin extends BaseAsadmin {
 
     private UploadService uploadService;
 
+    
+    /** 
+     * Executes Asadmin command Upload.
+     * 
+     * @return int
+     * @throws CommandException
+     */
     @Override
     protected int executeCommand() throws CommandException {
         parameterMap = populateParameters(new HashMap<>(), PARAMETER_OPTIONS);
@@ -64,6 +70,13 @@ public class UploadAsadmin extends BaseAsadmin {
         return 1;
     }
 
+    
+    /** 
+     * Returns a directory from either passed in parameter, or from properties file.
+     * 
+     * @param params
+     * @return Map<String, String>
+     */
     @Override
     protected Map<String, String> resolveDir(Map<String, String> params) {
         if(params == null) {

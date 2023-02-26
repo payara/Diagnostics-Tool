@@ -25,6 +25,16 @@ public class UploadService {
         this.params = params;
     }
 
+    
+    /** 
+     * Builds and calls upload() for the selected service.
+     * 
+     * 0 - Success
+     * 1 - Failure
+     * 
+     * @return int
+     * @throws FileNotFoundException
+     */
     public int executeUpload() throws FileNotFoundException {
         String serviceName = params.get(ParamConstants.UPLOAD_DESTINATION_PARAM);
 
@@ -43,6 +53,9 @@ public class UploadService {
         return 1;
     }
 
+    /**
+     * Factory class for intialising a service.
+     */
     private static class ServiceAPIBuilder {
         Logger logger = Logger.getLogger(this.getClass().getName());
 
@@ -50,10 +63,15 @@ public class UploadService {
         private Map<String, String> params;
 
         public ServiceAPIBuilder(String APIName, Map<String, String> params) {
-            this.APIName = APIName.trim().toUpperCase();
+            this.APIName = APIName.trim().toLowerCase();
             this.params = params;
         }
 
+        /**
+         * Returns the API service based on the APIName.
+         * 
+         * @return Uploader
+         */
         public Uploader getAPI() {
             if (APIName == null || params == null) {
                 return null;
@@ -106,7 +124,15 @@ public class UploadService {
 
             return null;
         }
-
+        
+        /**
+         * Returns boolean value if paremters provided are valid.
+         * 
+         * @param key
+         * @param params
+         * @param message
+         * @return boolean
+         */
         private boolean validateParam(String key, Map<String, String> params, String message) {
             if(params == null || key == null) {
                 return false;
@@ -125,6 +151,13 @@ public class UploadService {
             return true;
         }
 
+        /**
+         * Overload method which prints a default message.
+         * 
+         * @param key
+         * @param params
+         * @return boolean
+         */
         private boolean validateParam(String key, Map<String, String> params) {
             return validateParam(key, params, null);
         }

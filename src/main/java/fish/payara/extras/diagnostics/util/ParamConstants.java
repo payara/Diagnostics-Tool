@@ -20,8 +20,8 @@ public final class ParamConstants {
     public static final String DOMAIN_XML_FILE_PATH = "DomainXMLFilePath";
     public static final String LOGS_PATH = "LogPath";
 
-    public static final String NEXUS = "NEXUS";
-    public static final String ZENDESK = "ZENDESK";
+    public static final String NEXUS = "nexus";
+    public static final String ZENDESK = "zendesk";
 
     private ParamConstants(){};
 }
