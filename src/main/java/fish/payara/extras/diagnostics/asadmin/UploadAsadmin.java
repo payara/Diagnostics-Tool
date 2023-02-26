@@ -1,7 +1,6 @@
 package fish.payara.extras.diagnostics.asadmin;
 
 import java.io.FileNotFoundException;
-import java.lang.System.Logger.Level;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
