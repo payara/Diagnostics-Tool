@@ -10,6 +10,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.logging.Logger;
@@ -65,7 +66,7 @@ public class NexusAPI implements Uploader {
             .extension("zip")
             .groupId("fish.payara.extras")
             .artifactId(file.getName().substring(0, file.getName().lastIndexOf(".")))
-            .version(getClass().getPackage().getImplementationVersion())
+            .version(new Timestamp(System.currentTimeMillis()).toString())
             .packaging("zip")
             .generatePom(true)
             .build();
