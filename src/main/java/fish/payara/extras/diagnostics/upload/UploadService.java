@@ -80,7 +80,7 @@ public class UploadService {
 
             boolean valid = false;
             valid = validateParam(ParamConstants.USERNAME_PARAM, params, "Username was not valid or missing. Upload will not continue.");
-            valid = validateParam(ParamConstants.USERNAME_PARAM, params, "Password was not valid or missing. Upload will not continue.");
+            valid = validateParam(ParamConstants.PASSWORD_PARAM, params, "Password was not valid or missing. Upload will not continue.");
 
             if(!valid) {
                 return null;
