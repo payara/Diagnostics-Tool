@@ -24,7 +24,7 @@ import fish.payara.extras.diagnostics.util.MultiPartBodyPublisher;
 public class NexusAPI implements Uploader {
     Logger logger = Logger.getLogger(this.getClass().getName());
 
-    private static final String NEXUS_URL = "https://nexus.payara.fish/service/rest/v1/components";
+    private static final String NEXUS_URL = "https://nexus.dev.payara.fish/service/rest/v1/components";
     private static final String CONTENT_TYPE = "Content-Type";
     private static final String CONTENT_TYPE_MULTIPART_BOUNDARY = "multipart/form-data; boundary=";
     private static final String AUTHORIZATION_HEADER = "Authorization";
