@@ -7,16 +7,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 public class InstanceDomainXmlCollector extends FileCollector {
 
-    Logger LOGGER = Logger.getLogger(this.getClass().getName());
-
     @Override
     public int collect() {
-        LOGGER.info("Collecting instance");
-
         Map<String, String> params = getParams();
         if (params == null) {
             return 0;
@@ -38,7 +33,6 @@ public class InstanceDomainXmlCollector extends FileCollector {
 
 
             setInstanceName(String.valueOf(filePath.getParent().getParent().getFileName()));
-            LOGGER.info("Instance name" + getInstanceName());
             result = super.collect();
 
         }
