@@ -1,14 +1,12 @@
 package fish.payara.extras.diagnostics.collection;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import fish.payara.extras.diagnostics.collection.collectors.InstanceDomainXmlCollector;
 import org.glassfish.api.logging.LogLevel;
 
 import static java.util.Map.entry;
@@ -29,7 +27,8 @@ public class CollectorService {
     
     private static final Map<String, Collector> COLLECTORS = Map.ofEntries(
         entry(ParamConstants.SERVER_LOG_PARAM, new LogCollector()),
-        entry(ParamConstants.DOMAIN_XML_PARAM, new DomainXmlCollector())
+        entry(ParamConstants.DOMAIN_XML_PARAM, new DomainXmlCollector()),
+        entry(ParamConstants.INSTANCES_DOMAIN_XML_PARAM, new InstanceDomainXmlCollector())
     );
 
     Map<String, String> parameterMap;
@@ -49,7 +48,7 @@ public class CollectorService {
      * 
      * @return int
      */
-    public int executCollection() {
+    public int executeCollection() {
         List<Collector> activeCollectors = getActiveCollectors(parameterMap, parameterOptions, COLLECTORS);
 
         int result = 0;
