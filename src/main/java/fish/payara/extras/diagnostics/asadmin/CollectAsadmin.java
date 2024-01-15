@@ -144,6 +144,9 @@ public class CollectAsadmin extends BaseAsadmin {
         List<Path> instanceXmlPaths = new ArrayList<>();
         for (String nodeName : nodePaths.keySet()) {
             List<String> instances = nodesAndServers.get(nodeName);
+            if (instances == null) {
+                continue;
+            }
             instances.forEach(s -> instanceXmlPaths.add(Paths.get(String.valueOf(nodePaths.get(nodeName)),s,"config","domain.xml")));
         }
         return instanceXmlPaths.toString();

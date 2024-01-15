@@ -28,6 +28,9 @@ public class InstanceDomainXmlCollector extends FileCollector {
         List<String> paths = new ArrayList<>(Arrays.asList(instanceDomainPaths.split(",")));
         int result = 0;
         for(String path : paths){
+            if ("".equals(path)) {
+                continue;
+            }
             Path filePath = Path.of(path.strip());
             setFilePath(filePath);
 
