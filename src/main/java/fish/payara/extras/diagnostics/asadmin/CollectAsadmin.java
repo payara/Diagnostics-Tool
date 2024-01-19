@@ -47,7 +47,7 @@ public class CollectAsadmin extends BaseAsadmin {
     @Param(name = DOMAIN_XML_PARAM, shortName = "d", optional = true, defaultValue = "true")
     private boolean collectDomainXml;
 
-    @Param(name = INSTANCES_DOMAIN_XML_PARAM, shortName = "id", optional = true, defaultValue = "true")
+    @Param(name = INSTANCES_DOMAIN_XML_PARAM, optional = true, defaultValue = "true")
     private boolean collectInstanceDomainXml;
 
     private CollectorService collectorService;
