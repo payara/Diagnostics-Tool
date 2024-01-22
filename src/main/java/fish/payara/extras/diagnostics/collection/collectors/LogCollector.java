@@ -14,27 +14,43 @@ import fish.payara.extras.diagnostics.util.ParamConstants;
 
 public class LogCollector extends FileCollector {
 
+    private Path logPath;
+
     @Override
     public int collect() {
         Map<String, String> params = getParams();
-        if(params != null) {
-            String logPathString = params.get(ParamConstants.LOGS_PATH);
-            String outputPathString = params.get(ParamConstants.DIR_PARAM);
-            if(logPathString != null) {
-                Path logPath = Path.of(logPathString);
-                Path outputPath = Path.of(outputPathString);
-                if(confirmPath(logPath, false) && confirmPath(outputPath, true)) {
-                    try {
-                        Files.walkFileTree(logPath, new CopyDirectoryVisitor(outputPath));
-                    } catch(IOException io) {
-                        logger.log(LogLevel.SEVERE, "Could not copy directory " + logPathString + " to path " + outputPathString);
-                        io.printStackTrace();
-                        return 1;
-                    }
-                }
+        if (params == null) {
+            return 0;
+        }
+        String logPathString = params.get(ParamConstants.LOGS_PATH);
+        String outputPathString = params.get(ParamConstants.DIR_PARAM);
+        if (logPathString == null) {
+            return 0;
+        }
+        if (logPath == null) {
+            logPath = Path.of(logPathString);
+        }
+        Path outputPath = Path.of(outputPathString);
+        if (confirmPath(logPath, false) && confirmPath(outputPath, true)) {
+            try {
+                CopyDirectoryVisitor copyDirectoryVisitor = new CopyDirectoryVisitor(outputPath);
+                copyDirectoryVisitor.setInstanceName(getInstanceName());
+                Files.walkFileTree(logPath, copyDirectoryVisitor);
+            } catch (IOException io) {
+                logger.log(LogLevel.SEVERE, "Could not copy directory " + logPathString + " to path " + outputPathString);
+                io.printStackTrace();
+                return 1;
             }
         }
         return 0;
+    }
+
+    public Path getLogPath() {
+        return logPath;
+    }
+
+    public void setLogPath(Path logPath) {
+        this.logPath = logPath;
     }
 
     private class CopyDirectoryVisitor extends SimpleFileVisitor<Path> {
@@ -42,16 +58,18 @@ public class LogCollector extends FileCollector {
         private final Path destination;
         private Path path = null;
 
+        private String instanceName;
+
         public CopyDirectoryVisitor(Path destination) {
             this.destination = destination;
         }
 
         @Override
         public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-            if(path == null) {
+            if (path == null) {
                 this.path = dir;
             } else {
-                Files.createDirectory(destination.resolve(path.relativize(destination)));
+                Files.createDirectories(destination.resolve(path.relativize(destination)));
             }
 
             return FileVisitResult.CONTINUE;
@@ -59,8 +77,25 @@ public class LogCollector extends FileCollector {
 
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-            Files.copy(file, destination.resolve(path.relativize(file)));
+
+            Path relativePath = path.relativize(file);
+            if (instanceName != null) {
+                Files.createDirectories(destination.resolve(path.relativize(file)).getParent());
+                String prefix = instanceName + "-";
+                if ((prefix + relativePath).startsWith(prefix + instanceName)) {
+                    prefix = "";
+                }
+                Files.copy(file, destination.resolve((prefix + relativePath)));
+
+            } else {
+                Files.copy(file, destination.resolve(relativePath));
+            }
+
             return FileVisitResult.CONTINUE;
+        }
+
+        public void setInstanceName(String instanceName) {
+            this.instanceName = instanceName;
         }
     }
 }

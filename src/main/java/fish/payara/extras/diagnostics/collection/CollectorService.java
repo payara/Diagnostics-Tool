@@ -7,6 +7,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import fish.payara.extras.diagnostics.collection.collectors.InstanceDomainXmlCollector;
+import fish.payara.extras.diagnostics.collection.collectors.InstanceLogCollector;
 import org.glassfish.api.logging.LogLevel;
 
 import static java.util.Map.entry;
@@ -28,7 +29,8 @@ public class CollectorService {
     private static final Map<String, Collector> COLLECTORS = Map.ofEntries(
         entry(ParamConstants.SERVER_LOG_PARAM, new LogCollector()),
         entry(ParamConstants.DOMAIN_XML_PARAM, new DomainXmlCollector()),
-        entry(ParamConstants.INSTANCES_DOMAIN_XML_PARAM, new InstanceDomainXmlCollector())
+        entry(ParamConstants.INSTANCES_DOMAIN_XML_PARAM, new InstanceDomainXmlCollector()),
+        entry(ParamConstants.INSTANCES_LOG_PARAM, new InstanceLogCollector())
     );
 
     Map<String, String> parameterMap;
