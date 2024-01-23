@@ -37,7 +37,8 @@ public class CollectAsadmin extends BaseAsadmin {
     private static final String DOMAIN_XML_PARAM = ParamConstants.DOMAIN_XML_PARAM;
     private static final String INSTANCES_DOMAIN_XML_PARAM = ParamConstants.INSTANCES_DOMAIN_XML_PARAM;
     private static final String INSTANCES_LOG_PARAM = ParamConstants.INSTANCES_LOG_PARAM;
-    private static final String[] PARAMETER_OPTIONS = {SERVER_LOG_PARAM, DOMAIN_XML_PARAM, INSTANCES_DOMAIN_XML_PARAM, INSTANCES_LOG_PARAM, DIR_PARAM};
+    private static final String DOMAIN_JVM_REPORT_PARAM = ParamConstants.DOMAIN_JVM_REPORT_PARAM;
+    private static final String[] PARAMETER_OPTIONS = {SERVER_LOG_PARAM, DOMAIN_XML_PARAM, INSTANCES_DOMAIN_XML_PARAM, INSTANCES_LOG_PARAM, DOMAIN_JVM_REPORT_PARAM, DIR_PARAM};
     private static final String DOMAIN_NAME = ParamConstants.DOMAIN_NAME;
     private static final String DOMAIN_XML_FILE_PATH = ParamConstants.DOMAIN_XML_FILE_PATH;
     private static final String LOGS_PATH = ParamConstants.LOGS_PATH;
@@ -54,6 +55,9 @@ public class CollectAsadmin extends BaseAsadmin {
 
     @Param(name = INSTANCES_LOG_PARAM, optional = true, defaultValue = "true")
     private boolean collectInstanceLog;
+
+    @Param(name = DOMAIN_JVM_REPORT_PARAM, optional = true, defaultValue = "true")
+    private boolean collectDomainJvmReport;
 
     private CollectorService collectorService;
 

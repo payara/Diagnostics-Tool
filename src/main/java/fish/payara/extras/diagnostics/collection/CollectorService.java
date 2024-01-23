@@ -6,8 +6,7 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import fish.payara.extras.diagnostics.collection.collectors.InstanceDomainXmlCollector;
-import fish.payara.extras.diagnostics.collection.collectors.InstanceLogCollector;
+import fish.payara.extras.diagnostics.collection.collectors.*;
 import org.glassfish.api.logging.LogLevel;
 
 import static java.util.Map.entry;
@@ -19,8 +18,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import fish.payara.extras.diagnostics.collection.collectors.DomainXmlCollector;
-import fish.payara.extras.diagnostics.collection.collectors.LogCollector;
 import fish.payara.extras.diagnostics.util.ParamConstants;
 
 public class CollectorService {
@@ -30,7 +27,8 @@ public class CollectorService {
         entry(ParamConstants.SERVER_LOG_PARAM, new LogCollector()),
         entry(ParamConstants.DOMAIN_XML_PARAM, new DomainXmlCollector()),
         entry(ParamConstants.INSTANCES_DOMAIN_XML_PARAM, new InstanceDomainXmlCollector()),
-        entry(ParamConstants.INSTANCES_LOG_PARAM, new InstanceLogCollector())
+        entry(ParamConstants.INSTANCES_LOG_PARAM, new InstanceLogCollector()),
+        entry(ParamConstants.DOMAIN_JVM_REPORT_PARAM, new DomainJVMCollector())
     );
 
     Map<String, String> parameterMap;

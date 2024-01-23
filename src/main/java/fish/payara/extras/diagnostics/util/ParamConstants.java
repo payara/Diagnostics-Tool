@@ -10,6 +10,7 @@ public final class ParamConstants {
     public static final String DOMAIN_XML_PARAM = "domainXml";
     public static final String INSTANCES_DOMAIN_XML_PARAM = "instanceDomainXml";
     public static final String INSTANCES_LOG_PARAM = "instanceLogXml";
+    public static final String DOMAIN_JVM_REPORT_PARAM = "domainJvmReport";
 
     //Upload Params
     public static final String USERNAME_PARAM = "username";
