@@ -38,10 +38,12 @@ public class CollectAsadmin extends BaseAsadmin {
     private static final String INSTANCES_DOMAIN_XML_PARAM = ParamConstants.INSTANCES_DOMAIN_XML_PARAM;
     private static final String INSTANCES_LOG_PARAM = ParamConstants.INSTANCES_LOG_PARAM;
     private static final String DOMAIN_JVM_REPORT_PARAM = ParamConstants.DOMAIN_JVM_REPORT_PARAM;
-    private static final String[] PARAMETER_OPTIONS = {SERVER_LOG_PARAM, DOMAIN_XML_PARAM, INSTANCES_DOMAIN_XML_PARAM, INSTANCES_LOG_PARAM, DOMAIN_JVM_REPORT_PARAM, DIR_PARAM};
+    private static final String INSTANCE_JVM_REPORT_PARAM = ParamConstants.INSTANCE_JVM_REPORT_PARAM;
+    private static final String[] PARAMETER_OPTIONS = {SERVER_LOG_PARAM, DOMAIN_XML_PARAM, INSTANCES_DOMAIN_XML_PARAM, INSTANCES_LOG_PARAM, DOMAIN_JVM_REPORT_PARAM, INSTANCE_JVM_REPORT_PARAM, DIR_PARAM};
     private static final String DOMAIN_NAME = ParamConstants.DOMAIN_NAME;
     private static final String DOMAIN_XML_FILE_PATH = ParamConstants.DOMAIN_XML_FILE_PATH;
     private static final String LOGS_PATH = ParamConstants.LOGS_PATH;
+    private static final String INSTANCES_NAMES = ParamConstants.INSTANCES_NAMES;
     Logger LOGGER = Logger.getLogger(this.getClass().getName());
 
     @Param(name = SERVER_LOG_PARAM, shortName = "s", optional = true, defaultValue = "true")
@@ -58,6 +60,9 @@ public class CollectAsadmin extends BaseAsadmin {
 
     @Param(name = DOMAIN_JVM_REPORT_PARAM, optional = true, defaultValue = "true")
     private boolean collectDomainJvmReport;
+
+    @Param(name = INSTANCE_JVM_REPORT_PARAM, optional = true, defaultValue = "true")
+    private boolean collectInstanceJvmReport;
 
     private CollectorService collectorService;
 
@@ -78,8 +83,7 @@ public class CollectAsadmin extends BaseAsadmin {
         parameterMap = populateParameters(new HashMap<String, String>(), PARAMETER_OPTIONS);
         parameterMap = resolveDir(parameterMap);
 
-        collectorService = new CollectorService(parameterMap, PARAMETER_OPTIONS);
-
+        collectorService = new CollectorService(parameterMap, PARAMETER_OPTIONS, programOpts, env);
         PropertiesFile props = getProperties();
         props.store(DIR_PARAM, parameterMap.get(DIR_PARAM));
         return collectorService.executeCollection();
@@ -101,6 +105,7 @@ public class CollectAsadmin extends BaseAsadmin {
         params.put(INSTANCES_DOMAIN_XML_PATH, getInstancePaths(PathType.DOMAIN));
         params.put(INSTANCES_LOG_PATH, getInstancePaths(PathType.LOG));
         params.put(LOGS_PATH, getDomainRootDir().getPath() + "/logs");
+        params.put(INSTANCES_NAMES, getInstancesNames());
 
         return params;
     }
@@ -181,6 +186,19 @@ public class CollectAsadmin extends BaseAsadmin {
             }
         }
         return instanceXmlPaths.toString();
+    }
+
+    private String getInstancesNames() {
+        Map<String, Path> nodePaths = getNodePaths();
+        Map<String, List<String>> nodesAndServers = getServersInNodes();
+        List<String> instanceList = new ArrayList<>();
+
+        nodePaths.keySet().forEach(s -> {
+            instanceList.addAll(nodesAndServers.get(s));
+
+        });
+
+        return instanceList.toString();
     }
 
     enum PathType {

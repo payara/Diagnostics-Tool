@@ -6,6 +6,8 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import com.sun.enterprise.admin.cli.Environment;
+import com.sun.enterprise.admin.cli.ProgramOptions;
 import fish.payara.extras.diagnostics.collection.collectors.*;
 import org.glassfish.api.logging.LogLevel;
 
@@ -23,20 +25,29 @@ import fish.payara.extras.diagnostics.util.ParamConstants;
 public class CollectorService {
     Logger logger = Logger.getLogger(this.getClass().getName());
     
-    private static final Map<String, Collector> COLLECTORS = Map.ofEntries(
-        entry(ParamConstants.SERVER_LOG_PARAM, new LogCollector()),
-        entry(ParamConstants.DOMAIN_XML_PARAM, new DomainXmlCollector()),
-        entry(ParamConstants.INSTANCES_DOMAIN_XML_PARAM, new InstanceDomainXmlCollector()),
-        entry(ParamConstants.INSTANCES_LOG_PARAM, new InstanceLogCollector()),
-        entry(ParamConstants.DOMAIN_JVM_REPORT_PARAM, new DomainJVMCollector())
-    );
+    private final Map<String, Collector> COLLECTORS;
 
     Map<String, String> parameterMap;
     String[] parameterOptions;
 
-    public CollectorService(Map<String, String> params, String[] parameterOptions) {
+    public CollectorService(Map<String, String> params, String[] parameterOption) {
+        this(params, parameterOption, null, null);
+    }
+
+    public CollectorService(Map<String, String> params, String[] parameterOptions, ProgramOptions programOptions, Environment environment) {
+
         this.parameterMap = params;
         this.parameterOptions = parameterOptions;
+        COLLECTORS = Map.ofEntries(
+                entry(ParamConstants.SERVER_LOG_PARAM, new LogCollector()),
+                entry(ParamConstants.DOMAIN_XML_PARAM, new DomainXmlCollector()),
+                entry(ParamConstants.INSTANCES_DOMAIN_XML_PARAM, new InstanceDomainXmlCollector()),
+                entry(ParamConstants.INSTANCES_LOG_PARAM, new InstanceLogCollector()),
+                entry(ParamConstants.DOMAIN_JVM_REPORT_PARAM, new JVMCollector(environment, programOptions)),
+                entry(ParamConstants.INSTANCE_JVM_REPORT_PARAM, new JVMCollector(environment, programOptions, true))
+        );
+
+
     }
 
     
@@ -172,5 +183,4 @@ public class CollectorService {
         }
         return activeCollectors;
     }
-
 }
