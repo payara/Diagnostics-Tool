@@ -28,6 +28,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static fish.payara.extras.diagnostics.util.ParamConstants.INSTANCES_DOMAIN_XML_PATH;
+import static fish.payara.extras.diagnostics.util.ParamConstants.INSTANCES_LOG_PATH;
 
 @Service(name = "collect-diagnostics")
 @PerLookup
@@ -35,7 +36,8 @@ public class CollectAsadmin extends BaseAsadmin {
     private static final String SERVER_LOG_PARAM = ParamConstants.SERVER_LOG_PARAM;
     private static final String DOMAIN_XML_PARAM = ParamConstants.DOMAIN_XML_PARAM;
     private static final String INSTANCES_DOMAIN_XML_PARAM = ParamConstants.INSTANCES_DOMAIN_XML_PARAM;
-    private static final String[] PARAMETER_OPTIONS = {SERVER_LOG_PARAM, DOMAIN_XML_PARAM, INSTANCES_DOMAIN_XML_PARAM, DIR_PARAM};
+    private static final String INSTANCES_LOG_PARAM = ParamConstants.INSTANCES_LOG_PARAM;
+    private static final String[] PARAMETER_OPTIONS = {SERVER_LOG_PARAM, DOMAIN_XML_PARAM, INSTANCES_DOMAIN_XML_PARAM, INSTANCES_LOG_PARAM, DIR_PARAM};
     private static final String DOMAIN_NAME = ParamConstants.DOMAIN_NAME;
     private static final String DOMAIN_XML_FILE_PATH = ParamConstants.DOMAIN_XML_FILE_PATH;
     private static final String LOGS_PATH = ParamConstants.LOGS_PATH;
@@ -49,6 +51,9 @@ public class CollectAsadmin extends BaseAsadmin {
 
     @Param(name = INSTANCES_DOMAIN_XML_PARAM, optional = true, defaultValue = "true")
     private boolean collectInstanceDomainXml;
+
+    @Param(name = INSTANCES_LOG_PARAM, optional = true, defaultValue = "true")
+    private boolean collectInstanceLog;
 
     private CollectorService collectorService;
 
@@ -89,13 +94,14 @@ public class CollectAsadmin extends BaseAsadmin {
 
         params.put(DOMAIN_XML_FILE_PATH, getDomainXml().getAbsolutePath());
         params.put(DOMAIN_NAME, getDomainName());
-        params.put(INSTANCES_DOMAIN_XML_PATH, getInstanceDomainXmlPaths());
+        params.put(INSTANCES_DOMAIN_XML_PATH, getInstancePaths(PathType.DOMAIN));
+        params.put(INSTANCES_LOG_PATH, getInstancePaths(PathType.LOG));
         params.put(LOGS_PATH, getDomainRootDir().getPath() + "/logs");
 
         return params;
     }
 
-    private String getInstanceDomainXmlPaths() {
+    private DomDocument getDocument() {
         File domainXmlFile = Paths.get(getDomainXml().getAbsolutePath()).toFile();
         ConfigParser configParser = new ConfigParser(serviceLocator);
 
@@ -106,14 +112,18 @@ public class CollectAsadmin extends BaseAsadmin {
                     noSuchMethodError);
         }
 
-        URL domainUrl = null;
+        URL domainUrl;
         try {
             domainUrl = domainXmlFile.toURI().toURL();
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
         DomDocument doc = configParser.parse(domainUrl);
+        return doc;
+    }
 
+    private Map<String, Path> getNodePaths(){
+        DomDocument doc = getDocument();
         Map<String, Path> nodePaths = new HashMap<>();
         for (Node node : doc.getRoot().createProxy(Domain.class).getNodes().getNode()) {
             if (!node.getType().equals("CONFIG")) {
@@ -125,6 +135,11 @@ public class CollectAsadmin extends BaseAsadmin {
             }
             nodePaths.put(node.getName(), Paths.get(node.getInstallDir().replace("${com.sun.aas.productRoot}", System.getProperty("com.sun.aas.productRoot")), "glassfish", "nodes", node.getName()));
         }
+        return nodePaths;
+    }
+
+    private Map<String, List<String>> getServersInNodes() {
+        DomDocument doc = getDocument();
         Map<String, List<String>> nodesAndServers = new HashMap<>();
         for (Server server : doc.getRoot().createProxy(Domain.class).getServers().getServer()) {
             if (server.getConfig().isDas()) {
@@ -141,14 +156,30 @@ public class CollectAsadmin extends BaseAsadmin {
             servers.add(server.getName());
             nodesAndServers.put(server.getNodeRef(), servers);
         }
+        return nodesAndServers;
+    }
+    private String getInstancePaths(PathType pathType) {
+        Map<String, Path> nodePaths = getNodePaths();
+        Map<String, List<String>> nodesAndServers = getServersInNodes();
         List<Path> instanceXmlPaths = new ArrayList<>();
         for (String nodeName : nodePaths.keySet()) {
             List<String> instances = nodesAndServers.get(nodeName);
             if (instances == null) {
                 continue;
             }
-            instances.forEach(s -> instanceXmlPaths.add(Paths.get(String.valueOf(nodePaths.get(nodeName)),s,"config","domain.xml")));
+            if (pathType == PathType.DOMAIN) {
+                instances.forEach(s -> instanceXmlPaths.add(Paths.get(String.valueOf(nodePaths.get(nodeName)),s,"config","domain.xml")));
+                continue;
+            }
+
+            if(pathType == PathType.LOG) {
+                instances.forEach(s -> instanceXmlPaths.add(Paths.get(String.valueOf(nodePaths.get(nodeName)),s,"logs")));
+            }
         }
         return instanceXmlPaths.toString();
+    }
+
+    enum PathType {
+        DOMAIN, LOG;
     }
 }
