@@ -9,6 +9,7 @@ import java.util.zip.ZipOutputStream;
 import com.sun.enterprise.admin.cli.Environment;
 import com.sun.enterprise.admin.cli.ProgramOptions;
 import fish.payara.extras.diagnostics.collection.collectors.*;
+import fish.payara.extras.diagnostics.util.JvmCollectionType;
 import org.glassfish.api.logging.LogLevel;
 
 import static java.util.Map.entry;
@@ -44,7 +45,9 @@ public class CollectorService {
                 entry(ParamConstants.INSTANCES_DOMAIN_XML_PARAM, new InstanceDomainXmlCollector()),
                 entry(ParamConstants.INSTANCES_LOG_PARAM, new InstanceLogCollector()),
                 entry(ParamConstants.DOMAIN_JVM_REPORT_PARAM, new JVMCollector(environment, programOptions)),
-                entry(ParamConstants.INSTANCE_JVM_REPORT_PARAM, new JVMCollector(environment, programOptions, true))
+                entry(ParamConstants.INSTANCE_JVM_REPORT_PARAM, new JVMCollector(environment, programOptions, true)),
+                entry(ParamConstants.DOMAIN_THREAD_DUMP_PARAM, new JVMCollector(environment, programOptions, JvmCollectionType.THREAD_DUMP)),
+                entry(ParamConstants.INSTANCE_THREAD_DUMP_PARAM, new JVMCollector(environment, programOptions, true, JvmCollectionType.THREAD_DUMP))
         );
 
 

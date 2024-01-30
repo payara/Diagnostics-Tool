@@ -13,6 +13,9 @@ public final class ParamConstants {
     public static final String DOMAIN_JVM_REPORT_PARAM = "domainJvmReport";
     public static final String INSTANCE_JVM_REPORT_PARAM = "instanceJvmReport";
 
+     public static final String DOMAIN_THREAD_DUMP_PARAM = "domainThreadDump";
+    public static final String INSTANCE_THREAD_DUMP_PARAM = "instanceThreadDump";
+
     //Upload Params
     public static final String USERNAME_PARAM = "username";
     public static final String PASSWORD_PARAM = "password";

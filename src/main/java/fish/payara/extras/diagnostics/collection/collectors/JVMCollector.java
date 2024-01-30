@@ -4,6 +4,7 @@ import com.sun.enterprise.admin.cli.Environment;
 import com.sun.enterprise.admin.cli.ProgramOptions;
 import com.sun.enterprise.admin.cli.remote.RemoteCLICommand;
 import fish.payara.extras.diagnostics.collection.Collector;
+import fish.payara.extras.diagnostics.util.JvmCollectionType;
 import fish.payara.extras.diagnostics.util.ParamConstants;
 import org.glassfish.api.admin.CommandException;
 import org.glassfish.api.admin.ParameterMap;
@@ -24,25 +25,32 @@ public class JVMCollector implements Collector {
     private final ProgramOptions programOptions;
 
     private final boolean collectInstances;
+    private JvmCollectionType jvmCollectionType;
 
     public JVMCollector(Environment environment, ProgramOptions programOptions) {
         this(environment, programOptions, false);
     }
 
+    public JVMCollector(Environment environment, ProgramOptions programOptions, JvmCollectionType jvmCollectionType) {
+        this(environment, programOptions, false, jvmCollectionType);
+    }
+
     public JVMCollector(Environment environment, ProgramOptions programOptions, Boolean collectInstances) {
+        this(environment, programOptions, collectInstances, JvmCollectionType.JVM_REPORT);
+    }
+
+    public JVMCollector(Environment environment, ProgramOptions programOptions, Boolean collectInstances, JvmCollectionType jvmCollectionType) {
         this.environment = environment;
         this.programOptions = programOptions;
         this.collectInstances = collectInstances;
+        this.jvmCollectionType = jvmCollectionType;
     }
 
     @Override
     public int collect() {
         if (collectInstances) {
             AtomicBoolean result = new AtomicBoolean(true);
-            String instances = params.get(ParamConstants.INSTANCES_NAMES);
-            instances = instances.replace("[", "");
-            instances = instances.replace("]", "");
-            List<String> instancesList = new ArrayList<>(Arrays.asList(instances.split(",")));
+            List<String> instancesList = getInstanceList();
 
             instancesList.forEach(instance -> {
                 if ("".equals(instance)) {
@@ -62,12 +70,20 @@ public class JVMCollector implements Collector {
         return 1;
     }
 
+    private List<String> getInstanceList() {
+        String instances = params.get(ParamConstants.INSTANCES_NAMES);
+        instances = instances.replace("[", "");
+        instances = instances.replace("]", "");
+        return new ArrayList<>(Arrays.asList(instances.split(",")));
+    }
+
     private boolean writeToFile(String text, String fileName) {
         String outputPathString = params.get(ParamConstants.DIR_PARAM);
         Path outputPath = Path.of(outputPathString);
+        String suffix = jvmCollectionType == JvmCollectionType.JVM_REPORT ? "-jvm-report.txt" : "-thread-dump.txt";
         byte[] textBytes = text.getBytes();
         try {
-            Files.write(Path.of(outputPath + "/" + fileName + "-jvm-report.txt"), textBytes);
+            Files.write(Path.of(outputPath + "/" + fileName + suffix), textBytes);
         } catch (IOException e) {
             return false;
         }
@@ -90,6 +106,7 @@ public class JVMCollector implements Collector {
         try {
             ParameterMap parameterMap = new ParameterMap();
             parameterMap.add("target", target);
+            parameterMap.add("type", jvmCollectionType.value);
             programOptions.updateOptions(parameterMap);
             RemoteCLICommand remoteCLICommand = new RemoteCLICommand("generate-jvm-report", programOptions, environment);
             return writeToFile(remoteCLICommand.executeAndReturnOutput(), target);

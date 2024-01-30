@@ -39,7 +39,9 @@ public class CollectAsadmin extends BaseAsadmin {
     private static final String INSTANCES_LOG_PARAM = ParamConstants.INSTANCES_LOG_PARAM;
     private static final String DOMAIN_JVM_REPORT_PARAM = ParamConstants.DOMAIN_JVM_REPORT_PARAM;
     private static final String INSTANCE_JVM_REPORT_PARAM = ParamConstants.INSTANCE_JVM_REPORT_PARAM;
-    private static final String[] PARAMETER_OPTIONS = {SERVER_LOG_PARAM, DOMAIN_XML_PARAM, INSTANCES_DOMAIN_XML_PARAM, INSTANCES_LOG_PARAM, DOMAIN_JVM_REPORT_PARAM, INSTANCE_JVM_REPORT_PARAM, DIR_PARAM};
+    private static final String DOMAIN_THREAD_DUMP_PARAM = ParamConstants.DOMAIN_THREAD_DUMP_PARAM;
+    private static final String INSTANCE_THREAD_DUMP_PARAM = ParamConstants.INSTANCE_THREAD_DUMP_PARAM;
+    private static final String[] PARAMETER_OPTIONS = {SERVER_LOG_PARAM, DOMAIN_XML_PARAM, INSTANCES_DOMAIN_XML_PARAM, INSTANCES_LOG_PARAM, DOMAIN_JVM_REPORT_PARAM, INSTANCE_JVM_REPORT_PARAM, DOMAIN_THREAD_DUMP_PARAM, INSTANCE_THREAD_DUMP_PARAM, DIR_PARAM};
     private static final String DOMAIN_NAME = ParamConstants.DOMAIN_NAME;
     private static final String DOMAIN_XML_FILE_PATH = ParamConstants.DOMAIN_XML_FILE_PATH;
     private static final String LOGS_PATH = ParamConstants.LOGS_PATH;
@@ -63,6 +65,12 @@ public class CollectAsadmin extends BaseAsadmin {
 
     @Param(name = INSTANCE_JVM_REPORT_PARAM, optional = true, defaultValue = "true")
     private boolean collectInstanceJvmReport;
+
+    @Param(name = DOMAIN_THREAD_DUMP_PARAM, optional = true, defaultValue = "true")
+    private boolean collectDomainThreadDump;
+
+    @Param(name = INSTANCE_THREAD_DUMP_PARAM, optional = true, defaultValue = "true")
+    private boolean collectInstanceThreadDump;
 
     private CollectorService collectorService;
 
@@ -93,7 +101,7 @@ public class CollectAsadmin extends BaseAsadmin {
      * Populates parameters with Parameter options into a map. Overriden method add some more additionaly properties required by the collect command.
      * 
      * @param params
-     * @param paramOptions
+     * @param paramOptions0
      * @return Map<String, String>
      */
     @Override
