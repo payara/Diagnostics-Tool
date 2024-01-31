@@ -10,6 +10,8 @@ public final class ParamConstants {
     public static final String DOMAIN_XML_PARAM = "domainXml";
     public static final String INSTANCES_DOMAIN_XML_PARAM = "instanceDomainXml";
     public static final String INSTANCES_LOG_PARAM = "instanceLogXml";
+    public static final String DOMAIN_JVM_REPORT_PARAM = "domainJvmReport";
+    public static final String INSTANCE_JVM_REPORT_PARAM = "instanceJvmReport";
 
     //Upload Params
     public static final String USERNAME_PARAM = "username";
@@ -23,6 +25,7 @@ public final class ParamConstants {
     public static final String LOGS_PATH = "LogPath";
     public static final String INSTANCES_DOMAIN_XML_PATH = "InstancesDomainXmlPath";
     public static final String INSTANCES_LOG_PATH = "InstancesLogPath";
+    public static final String INSTANCES_NAMES = "InstancesNames";
 
     public static final String NEXUS = "nexus";
     public static final String ZENDESK = "zendesk";
