@@ -1,6 +1,7 @@
 package fish.payara.extras.diagnostics.asadmin;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -45,7 +46,7 @@ public abstract class BaseAsadmin extends LocalDomainCommand {
         }
 
         if(dir != null) {
-            if(Files.isDirectory(Path.of(dir))) {
+            if(Files.isDirectory(Paths.get(dir))) {
                 dir = dir + DIR_NAME;
             }
             params.put(DIR_PARAM, dir);
@@ -80,7 +81,7 @@ public abstract class BaseAsadmin extends LocalDomainCommand {
      */
     protected PropertiesFile getProperties() {
         if(propertiesPath != null) {
-            Path path = Path.of(propertiesPath);
+            Path path = Paths.get(propertiesPath);
             return new PropertiesFile(path);
         }
         return null;

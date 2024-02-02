@@ -1,13 +1,12 @@
 package fish.payara.extras.diagnostics.collection.collectors;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import fish.payara.extras.diagnostics.util.ParamConstants;
 
 public class DomainXmlCollector extends FileCollector {
-    Logger logger = Logger.getLogger(this.getClass().getName());
 
     @Override
     public int collect() {
@@ -31,8 +30,7 @@ public class DomainXmlCollector extends FileCollector {
         if(params != null) {
             String valueString = params.get(key);
             if(valueString != null) {
-                Path path = Path.of(valueString);
-                return path;
+                return Paths.get(valueString);
             }
         }
 

@@ -4,38 +4,39 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.glassfish.api.admin.ParameterMap;
 import org.junit.Test;
 
 import fish.payara.extras.diagnostics.collection.collectors.LogCollector;
 
-import static java.util.Map.entry;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class CollectorServiceTest {
 
-    private static final String[] PARAMETER_OPTIONS = {"Para1","Para2","Para3","Para4","Para5","Para6","Para7","Para8","Para9","Para10","Para11"};
-    private static final Map<String, Collector> COLLECTORS = Map.ofEntries(
-        entry(PARAMETER_OPTIONS[0], new LogCollector()),
-        entry(PARAMETER_OPTIONS[1], new LogCollector()),
-        entry(PARAMETER_OPTIONS[2], new LogCollector()),
-        entry(PARAMETER_OPTIONS[3], new LogCollector()),
-        entry(PARAMETER_OPTIONS[4], new LogCollector()),
-        entry(PARAMETER_OPTIONS[5], new LogCollector()),
-        entry(PARAMETER_OPTIONS[6], new LogCollector()),
-        entry(PARAMETER_OPTIONS[7], new LogCollector()),
-        entry(PARAMETER_OPTIONS[8], new LogCollector()),
-        entry(PARAMETER_OPTIONS[9], new LogCollector()),
-        entry(PARAMETER_OPTIONS[10], new LogCollector())
-    );
-    
+    private static final String[] PARAMETER_OPTIONS = {"Para1", "Para2", "Para3", "Para4", "Para5", "Para6", "Para7", "Para8", "Para9", "Para10", "Para11"};
+    private final Map<String, Collector> COLLECTORS;
+
+    public CollectorServiceTest() {
+        COLLECTORS = new HashMap<>();
+        COLLECTORS.put(PARAMETER_OPTIONS[0], new LogCollector());
+        COLLECTORS.put(PARAMETER_OPTIONS[1], new LogCollector());
+        COLLECTORS.put(PARAMETER_OPTIONS[2], new LogCollector());
+        COLLECTORS.put(PARAMETER_OPTIONS[3], new LogCollector());
+        COLLECTORS.put(PARAMETER_OPTIONS[4], new LogCollector());
+        COLLECTORS.put(PARAMETER_OPTIONS[5], new LogCollector());
+        COLLECTORS.put(PARAMETER_OPTIONS[6], new LogCollector());
+        COLLECTORS.put(PARAMETER_OPTIONS[7], new LogCollector());
+        COLLECTORS.put(PARAMETER_OPTIONS[8], new LogCollector());
+        COLLECTORS.put(PARAMETER_OPTIONS[9], new LogCollector());
+        COLLECTORS.put(PARAMETER_OPTIONS[10], new LogCollector());
+
+    }
+
     @Test
-    public void getActiveCollectorsAllFalseTest()
-    {
+    public void getActiveCollectorsAllFalseTest() {
         Map<String, String> params = new HashMap<>();
 
-        for(String parameter : PARAMETER_OPTIONS) {
+        for (String parameter : PARAMETER_OPTIONS) {
             params.put(parameter, "false");
         }
 
@@ -46,11 +47,10 @@ public class CollectorServiceTest {
     }
 
     @Test
-    public void getActiveCollectorsAllTrueTest()
-    {
+    public void getActiveCollectorsAllTrueTest() {
         Map<String, String> params = new HashMap<>();
 
-        for(String parameter : PARAMETER_OPTIONS) {
+        for (String parameter : PARAMETER_OPTIONS) {
             params.put(parameter, "true");
         }
 
@@ -61,15 +61,14 @@ public class CollectorServiceTest {
     }
 
     @Test
-    public void getActiveCollectorsMixedTest()
-    {
+    public void getActiveCollectorsMixedTest() {
         Map<String, String> params = new HashMap<>();
 
-        for(int i = 0; i < PARAMETER_OPTIONS.length/2; i++) {
+        for (int i = 0; i < PARAMETER_OPTIONS.length / 2; i++) {
             params.put(PARAMETER_OPTIONS[i], "true");
         }
 
-        for(int i = PARAMETER_OPTIONS.length/2; i < PARAMETER_OPTIONS.length; i++) {
+        for (int i = PARAMETER_OPTIONS.length / 2; i < PARAMETER_OPTIONS.length; i++) {
             params.put(PARAMETER_OPTIONS[i], "false");
         }
 
@@ -91,7 +90,7 @@ public class CollectorServiceTest {
     public void getActiveCollectorsIncompleteTest() {
         Map<String, String> params = new HashMap<>();
 
-        for(int i = 0; i < PARAMETER_OPTIONS.length/2; i++) {
+        for (int i = 0; i < PARAMETER_OPTIONS.length / 2; i++) {
             params.put(PARAMETER_OPTIONS[i], "true");
         }
 
@@ -105,7 +104,7 @@ public class CollectorServiceTest {
     public void getActiveCollectorsInvalidTest() {
         Map<String, String> params = new HashMap<>();
 
-        for(String parameter : PARAMETER_OPTIONS) {
+        for (String parameter : PARAMETER_OPTIONS) {
             params.put(parameter, "invalid");
         }
 
@@ -119,7 +118,7 @@ public class CollectorServiceTest {
     public void getActiveCollectorsEmptyTest() {
         Map<String, String> params = new HashMap<>();
 
-        for(String parameter : PARAMETER_OPTIONS) {
+        for (String parameter : PARAMETER_OPTIONS) {
             params.put(parameter, "");
         }
 

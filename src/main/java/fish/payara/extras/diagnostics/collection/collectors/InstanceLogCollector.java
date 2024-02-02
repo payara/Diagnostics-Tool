@@ -3,6 +3,7 @@ package fish.payara.extras.diagnostics.collection.collectors;
 import fish.payara.extras.diagnostics.util.ParamConstants;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -26,7 +27,7 @@ public class InstanceLogCollector extends LogCollector {
             if ("".equals(path)) {
                 continue;
             }
-            Path filePath = Path.of(path.strip());
+            Path filePath = Paths.get(path.trim());
             setLogPath(filePath);
 
 

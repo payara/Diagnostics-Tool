@@ -12,6 +12,7 @@ import org.glassfish.api.admin.ParameterMap;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -56,7 +57,7 @@ public class JVMCollector implements Collector {
                 if ("".equals(instance)) {
                     return;
                 }
-                result.set(collectReport(instance.strip()));
+                result.set(collectReport(instance.trim()));
             });
 
             if (result.get()) {
@@ -79,11 +80,11 @@ public class JVMCollector implements Collector {
 
     private boolean writeToFile(String text, String fileName) {
         String outputPathString = params.get(ParamConstants.DIR_PARAM);
-        Path outputPath = Path.of(outputPathString);
+        Path outputPath = Paths.get(outputPathString);
         String suffix = jvmCollectionType == JvmCollectionType.JVM_REPORT ? "-jvm-report.txt" : "-thread-dump.txt";
         byte[] textBytes = text.getBytes();
         try {
-            Files.write(Path.of(outputPath + "/" + fileName + suffix), textBytes);
+            Files.write(Paths.get(outputPath + "/" + fileName + suffix), textBytes);
         } catch (IOException e) {
             return false;
         }

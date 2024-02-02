@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -24,7 +25,7 @@ public abstract class FileCollector implements Collector {
     public FileCollector() {}
 
     public FileCollector(String filePath, String destination) {
-        this(Path.of(filePath), Path.of(destination));
+        this(Paths.get(filePath), Paths.get(destination));
     }
 
     public FileCollector(Path filePath, Path destination) {
