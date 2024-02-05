@@ -69,7 +69,7 @@ public class LogCollector extends FileCollector {
             if (path == null) {
                 this.path = dir;
             } else {
-                Files.createDirectories(destination.resolve(path.relativize(destination)));
+                Files.createDirectories(destination.resolve(destination));
             }
 
             return FileVisitResult.CONTINUE;
