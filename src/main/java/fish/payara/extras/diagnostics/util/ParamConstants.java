@@ -15,6 +15,7 @@ public final class ParamConstants {
 
      public static final String DOMAIN_THREAD_DUMP_PARAM = "domainThreadDump";
     public static final String INSTANCE_THREAD_DUMP_PARAM = "instanceThreadDump";
+    public static final String DOMAIN_NAME_PARAM = "domainName";
 
     //Upload Params
     public static final String USERNAME_PARAM = "username";

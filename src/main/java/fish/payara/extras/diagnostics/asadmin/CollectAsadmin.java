@@ -41,6 +41,7 @@ public class CollectAsadmin extends BaseAsadmin {
     private static final String INSTANCE_JVM_REPORT_PARAM = ParamConstants.INSTANCE_JVM_REPORT_PARAM;
     private static final String DOMAIN_THREAD_DUMP_PARAM = ParamConstants.DOMAIN_THREAD_DUMP_PARAM;
     private static final String INSTANCE_THREAD_DUMP_PARAM = ParamConstants.INSTANCE_THREAD_DUMP_PARAM;
+    private static final String DOMAIN_NAME_PARAM = ParamConstants.DOMAIN_NAME_PARAM;
     private static final String[] PARAMETER_OPTIONS = {SERVER_LOG_PARAM, DOMAIN_XML_PARAM, INSTANCES_DOMAIN_XML_PARAM, INSTANCES_LOG_PARAM, DOMAIN_JVM_REPORT_PARAM, INSTANCE_JVM_REPORT_PARAM, DOMAIN_THREAD_DUMP_PARAM, INSTANCE_THREAD_DUMP_PARAM, DIR_PARAM};
     private static final String DOMAIN_NAME = ParamConstants.DOMAIN_NAME;
     private static final String DOMAIN_XML_FILE_PATH = ParamConstants.DOMAIN_XML_FILE_PATH;
@@ -72,6 +73,9 @@ public class CollectAsadmin extends BaseAsadmin {
     @Param(name = INSTANCE_THREAD_DUMP_PARAM, optional = true, defaultValue = "true")
     private boolean collectInstanceThreadDump;
 
+    @Param(name = DOMAIN_NAME_PARAM, optional = true, primary = true, defaultValue = "domain1")
+    private String domainName;
+
     private CollectorService collectorService;
 
     @Inject
@@ -88,6 +92,8 @@ public class CollectAsadmin extends BaseAsadmin {
      */
     @Override
     protected int executeCommand() throws CommandException {
+        setDomainName(domainName);
+        initDomain();
         parameterMap = populateParameters(new HashMap<String, String>(), PARAMETER_OPTIONS);
         parameterMap = resolveDir(parameterMap);
 
@@ -109,7 +115,7 @@ public class CollectAsadmin extends BaseAsadmin {
         params = super.populateParameters(params, paramOptions);
 
         params.put(DOMAIN_XML_FILE_PATH, getDomainXml().getAbsolutePath());
-        params.put(DOMAIN_NAME, getDomainName());
+        params.put(DOMAIN_NAME, domainName);
         params.put(INSTANCES_DOMAIN_XML_PATH, getInstancePaths(PathType.DOMAIN));
         params.put(INSTANCES_LOG_PATH, getInstancePaths(PathType.LOG));
         params.put(LOGS_PATH, getDomainRootDir().getPath() + "/logs");
@@ -202,6 +208,9 @@ public class CollectAsadmin extends BaseAsadmin {
         List<String> instanceList = new ArrayList<>();
 
         nodePaths.keySet().forEach(s -> {
+            if (nodesAndServers.get(s) == null) {
+                return;
+            }
             instanceList.addAll(nodesAndServers.get(s));
 
         });
