@@ -1,34 +1,28 @@
 package fish.payara.extras.diagnostics.upload.uploaders;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import fish.payara.extras.diagnostics.upload.Uploader;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import org.glassfish.api.logging.LogLevel;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpRequest.BodyPublisher;
-import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpRequest.Builder;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
-
-import org.glassfish.api.logging.LogLevel;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import fish.payara.extras.diagnostics.upload.Uploader;
 
 public class ZendeskAPI implements Uploader {
     Logger logger = Logger.getLogger(this.getClass().getName());
@@ -45,12 +39,11 @@ public class ZendeskAPI implements Uploader {
     private static final String COMMENT = "Attachment uploaded using the diagnostics tool.";
     private static final String NON_SUCCESS_MESSAGE = "was not successful. Upload will not continue.";
 
-    private HttpClient httpClient = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
-
     private File file;
     private String username;
     private String password;
     private String ticketNumber;
+    private OkHttpClient httpClient = new OkHttpClient();
 
     public ZendeskAPI(File file, String username, String password, String ticketNumber) {
         this.file = file;
@@ -81,8 +74,12 @@ public class ZendeskAPI implements Uploader {
         String uploadUrl = ZENDESK_UPLOAD_URL + "?filename=" + file.getName();
         headers.put(AUTHORIZATION_HEADER, authString);
         headers.put(CONTENT_TYPE, "application/zip");
+        RequestBody requestBody = new MultipartBody.Builder().setType(MultipartBody.FORM)
+                .addFormDataPart("file", file.getName(), RequestBody.create(MediaType.parse("zip"), file))
+                .build();
 
-        HttpRequest uploadRequest = prepareRequest(uploadUrl, headers, "POST", BodyPublishers.ofFile(file.toPath()));
+
+        Request uploadRequest = prepareRequest(uploadUrl, headers, "POST", requestBody);
         if(uploadRequest == null) {
             logger.log(LogLevel.SEVERE, "Upload request " + NON_SUCCESS_MESSAGE);
             return 1;
@@ -90,14 +87,15 @@ public class ZendeskAPI implements Uploader {
 
         logger.log(LogLevel.INFO, "Starting upload to {0}", uploadUrl);
         
-        HttpResponse<String> uploadResponse = processRequest(uploadRequest, ZENDESK_UPLOAD_SUCCESS);
+        Response uploadResponse = processRequest(uploadRequest, ZENDESK_UPLOAD_SUCCESS);
         if(uploadResponse == null) {
             logger.log(LogLevel.SEVERE, "Upload response " + NON_SUCCESS_MESSAGE);
             return 1;
         }
 
         try {
-            token = objectMapper.readValue(uploadResponse.body(), ZendeskResponse.class).getToken();
+            assert uploadResponse.body() != null;
+            token = objectMapper.readValue(uploadResponse.body().toString(), ZendeskResponse.class).getToken();
         } catch (JsonMappingException e) {
             e.printStackTrace();
         } catch (JsonProcessingException e) {
@@ -120,7 +118,7 @@ public class ZendeskAPI implements Uploader {
             return 1;
         }
 
-        HttpRequest attachRequest = prepareRequest(attachUrl, headers, "PUT", BodyPublishers.ofString(jsonPayloadString));
+        Request attachRequest = prepareRequest(attachUrl, headers, "PUT", requestBody);
         if(attachRequest == null) {
             logger.log(LogLevel.SEVERE, "Attach request " + NON_SUCCESS_MESSAGE);
             return 1;
@@ -128,7 +126,7 @@ public class ZendeskAPI implements Uploader {
 
         logger.log(LogLevel.INFO, "Attaching file to ticket: {0}", ticketNumber);
 
-        HttpResponse<String> attachResponse = processRequest(attachRequest, ZENDESK_ATTACH_SUCCESS);
+        Response attachResponse = processRequest(attachRequest, ZENDESK_ATTACH_SUCCESS);
         if(attachResponse == null) {
             logger.log(LogLevel.SEVERE, "Attach response " + NON_SUCCESS_MESSAGE);
             return 1;
@@ -163,45 +161,37 @@ public class ZendeskAPI implements Uploader {
      * @param publisher
      * @return HttpRequest
      */
-    private HttpRequest prepareRequest(String url, Map<String, String> headers, String httpMethod, BodyPublisher publisher) {
+    private Request prepareRequest(String url, Map<String, String> headers, String httpMethod, RequestBody publisher) {
         if(url == null || headers == null || httpMethod == null || publisher == null) {
             return null;
         }
 
         httpMethod = httpMethod.trim().toUpperCase();
 
-        Builder httpRequestBuilder = HttpRequest.newBuilder()
-            .timeout(Duration.ofMinutes(2));
+        Request.Builder request = new Request.Builder();
 
         for(String key : headers.keySet()) {
             String value = headers.get(key);
             if(value != null) {
-                httpRequestBuilder.setHeader(key, value);
+                request.addHeader(key, value);
             }
         }
 
-        try {
-            URI uri = new URL(url).toURI();
-            httpRequestBuilder.uri(uri);
-        } catch (MalformedURLException | URISyntaxException e) {
-            logger.log(LogLevel.SEVERE, "URI was not valid and cannot be used: {0}", url);
-            e.printStackTrace();
-            return null;
-        }
+        request.url(url);
 
         switch(httpMethod){
             case "PUT":
-                httpRequestBuilder.PUT(publisher);
+                request.put(publisher);
                 break;
             case "POST":
-                httpRequestBuilder.POST(publisher);
+                request.post(publisher);
                 break;
             default:
                 logger.log(LogLevel.SEVERE, "HTTP Method: {0} is not configured to be used with this service.", httpMethod);
                 return null;
         }
 
-        return httpRequestBuilder.build();
+        return request.build();
     }
 
     
@@ -212,24 +202,19 @@ public class ZendeskAPI implements Uploader {
      * @param successCode
      * @return HttpResponse<String>
      */
-    private HttpResponse<String> processRequest(HttpRequest request, int successCode) {
-        try {
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            int httpStatus = response.statusCode();
-
+    private Response processRequest(Request request, int successCode) {
+        try (Response response = httpClient.newCall(request).execute()) {
+            int httpStatus = response.code();
             logger.log(LogLevel.INFO, "Server Responded with {0}", httpStatus);
             if(httpStatus != successCode) {
                 logger.log(LogLevel.SEVERE, "Upload did not succeed with HTTP code: {0}", successCode);
                 return null;
             }
-
             return response;
+
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
-
         return null;
     }
 

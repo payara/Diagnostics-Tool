@@ -3,6 +3,7 @@ package fish.payara.extras.diagnostics.collection.collectors;
 import fish.payara.extras.diagnostics.util.ParamConstants;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -17,7 +18,7 @@ public class InstanceDomainXmlCollector extends FileCollector {
             return 0;
         }
 
-        Path outputPath = Path.of(params.get(ParamConstants.DIR_PARAM));
+        Path outputPath = Paths.get(params.get(ParamConstants.DIR_PARAM));
 
         setDestination(outputPath);
 
@@ -31,7 +32,7 @@ public class InstanceDomainXmlCollector extends FileCollector {
             if ("".equals(path)) {
                 continue;
             }
-            Path filePath = Path.of(path.strip());
+            Path filePath = Paths.get(path.trim());
             setFilePath(filePath);
 
 

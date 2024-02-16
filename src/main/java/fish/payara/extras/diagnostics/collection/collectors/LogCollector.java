@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Map;
@@ -28,9 +29,9 @@ public class LogCollector extends FileCollector {
             return 0;
         }
         if (logPath == null) {
-            logPath = Path.of(logPathString);
+            logPath = Paths.get(logPathString);
         }
-        Path outputPath = Path.of(outputPathString);
+        Path outputPath = Paths.get(outputPathString);
         if (confirmPath(logPath, false) && confirmPath(outputPath, true)) {
             try {
                 CopyDirectoryVisitor copyDirectoryVisitor = new CopyDirectoryVisitor(outputPath);

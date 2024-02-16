@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -88,7 +89,7 @@ public class UploadService {
 
             String pathString = params.get(ParamConstants.DIR_PARAM);
             if (validateParam(ParamConstants.DIR_PARAM, params)) {
-                Path path = Path.of(pathString);
+                Path path = Paths.get(pathString);
                 if (Files.exists(path)) {
                     file = new File(pathString);
                 }

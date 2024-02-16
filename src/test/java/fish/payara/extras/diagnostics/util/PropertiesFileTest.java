@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.junit.After;
 import org.junit.Before;
@@ -14,7 +15,7 @@ import org.junit.Test;
 
 public class PropertiesFileTest {
     
-    private static final Path TEST_FILE_PATH = Path.of(System.getProperty("java.io.tmpdir")).resolve(".testproperties");
+    private static final Path TEST_FILE_PATH = Paths.get(System.getProperty("java.io.tmpdir")).resolve(".testproperties");
     PropertiesFile props;
 
     @Before
@@ -72,7 +73,7 @@ public class PropertiesFileTest {
 
     @Test
     public void propertiesNonExistantPathTest() {
-        Path nonPath = Path.of("this/path/does/not/exist");
+        Path nonPath = Paths.get("this/path/does/not/exist");
         props = new PropertiesFile(nonPath);
         assertNotNull(props);
         props.store("test", "test");
