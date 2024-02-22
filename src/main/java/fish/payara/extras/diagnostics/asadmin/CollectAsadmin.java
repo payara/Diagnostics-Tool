@@ -132,8 +132,6 @@ public class CollectAsadmin extends BaseAsadmin {
      */
     @Override
     protected int executeCommand() throws CommandException {
-        setDomainName(domainName);
-        initDomain();
         parameterMap = populateParameters(new HashMap<String, String>(), PARAMETER_OPTIONS);
         parameterMap = resolveDir(parameterMap);
 
@@ -143,7 +141,13 @@ public class CollectAsadmin extends BaseAsadmin {
         return collectorService.executeCollection();
     }
 
-    /** 
+    @Override
+    protected void validate() throws CommandException {
+        setDomainName(domainName);
+        super.validate();
+    }
+
+    /**
      * Populates parameters with Parameter options into a map. Overriden method add some more additionaly properties required by the collect command.
      * 
      * @param params
