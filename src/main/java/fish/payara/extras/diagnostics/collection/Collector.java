@@ -44,6 +44,8 @@ import java.util.Map;
 
 public interface Collector {
     public int collect();
-    public void setParams(Map<String, String> params);
-    public Map<String, String> getParams();
+
+    public void setParams(Map<String, Object> params);
+
+    public Map<String, Object> getParams();
 }

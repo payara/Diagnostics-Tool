@@ -53,74 +53,45 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Logger;
 
 public class JVMCollector implements Collector {
 
-    private Map<String, String> params;
+    private Map<String, Object> params;
     private final Environment environment;
     private final ProgramOptions programOptions;
-
-    private final boolean collectInstances;
     private JvmCollectionType jvmCollectionType;
+    private String target;
+    private String dirSuffix;
+    private Logger LOGGER = Logger.getLogger(JVMCollector.class.getName());
 
-    public JVMCollector(Environment environment, ProgramOptions programOptions) {
-        this(environment, programOptions, false);
-    }
-
-    public JVMCollector(Environment environment, ProgramOptions programOptions, JvmCollectionType jvmCollectionType) {
-        this(environment, programOptions, false, jvmCollectionType);
-    }
-
-    public JVMCollector(Environment environment, ProgramOptions programOptions, Boolean collectInstances) {
-        this(environment, programOptions, collectInstances, JvmCollectionType.JVM_REPORT);
-    }
-
-    public JVMCollector(Environment environment, ProgramOptions programOptions, Boolean collectInstances, JvmCollectionType jvmCollectionType) {
+    public JVMCollector(Environment environment, ProgramOptions programOptions, String target, JvmCollectionType jvmCollectionType) {
         this.environment = environment;
         this.programOptions = programOptions;
-        this.collectInstances = collectInstances;
         this.jvmCollectionType = jvmCollectionType;
+        this.target = target;
+    }
+
+    public JVMCollector(Environment environment, ProgramOptions programOptions, String target, JvmCollectionType jvmCollectionType, String dirSuffix) {
+        this.environment = environment;
+        this.programOptions = programOptions;
+        this.jvmCollectionType = jvmCollectionType;
+        this.target = target;
+        this.dirSuffix = dirSuffix;
     }
 
     @Override
     public int collect() {
-        if (collectInstances) {
-            AtomicBoolean result = new AtomicBoolean(true);
-            List<String> instancesList = getInstanceList();
-
-            instancesList.forEach(instance -> {
-                if ("".equals(instance)) {
-                    return;
-                }
-                result.set(collectReport(instance.trim()));
-            });
-
-            if (result.get()) {
-                return 0;
-            }
-            return 1;
-        }
-        if (collectReport("server")) {
+        if (collectReport(target)) {
             return 0;
         }
         return 1;
     }
 
-    private List<String> getInstanceList() {
-        String instances = params.get(ParamConstants.INSTANCES_NAMES);
-        instances = instances.replace("[", "");
-        instances = instances.replace("]", "");
-        return new ArrayList<>(Arrays.asList(instances.split(",")));
-    }
-
     private boolean writeToFile(String text, String fileName) {
-        String outputPathString = params.get(ParamConstants.DIR_PARAM);
-        Path outputPath = Paths.get(outputPathString);
+        String outputPathString = (String) params.get(ParamConstants.DIR_PARAM);
+        Path outputPath = Paths.get(outputPathString, dirSuffix != null ? dirSuffix : "");
         String suffix = jvmCollectionType == JvmCollectionType.JVM_REPORT ? "-jvm-report.txt" : "-thread-dump.txt";
         byte[] textBytes = text.getBytes();
         try {
@@ -132,12 +103,12 @@ public class JVMCollector implements Collector {
     }
 
     @Override
-    public Map<String, String> getParams() {
+    public Map<String, Object> getParams() {
         return params;
     }
 
     @Override
-    public void setParams(Map<String, String> params) {
+    public void setParams(Map<String, Object> params) {
         if (params != null) {
             this.params = params;
         }
@@ -149,16 +120,25 @@ public class JVMCollector implements Collector {
             parameterMap.add("target", target);
             parameterMap.add("type", jvmCollectionType.value);
             programOptions.updateOptions(parameterMap);
+            LOGGER.info("Collecting " + (jvmCollectionType == JvmCollectionType.JVM_REPORT ? "jvm report" : "thread dump") + " from " + target);
+
             RemoteCLICommand remoteCLICommand = new RemoteCLICommand("generate-jvm-report", programOptions, environment);
+            String result = remoteCLICommand.executeAndReturnOutput();
+
+            if (result.startsWith("Warning:") && result.contains("seems to be offline; command generate-jvm-report was not replicated to that instance")) {
+                System.out.printf("%s is offline! JVM %s will NOT be collected!%n", target, jvmCollectionType.value);
+                return true;
+            }
             return writeToFile(remoteCLICommand.executeAndReturnOutput(), target);
         } catch (CommandException e) {
             if (e.getMessage().contains("Remote server does not listen for requests on")) {
-                System.out.println("Server offline! JVM Report will NOT be collected.");
+                System.out.printf("Server is offline! JVM %s will NOT be collected!%n", jvmCollectionType.value);
                 return true;
             }
 
             if (e.getMessage().contains("has never been started")) {
-                System.out.println(target + " has not been started - cannot collect JVM Report");
+                System.out.printf("%s has not been started! JVM %s can not be collected!%n", target, jvmCollectionType.value);
+
                 return true;
             }
             throw new RuntimeException(e);

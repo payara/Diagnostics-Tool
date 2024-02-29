@@ -46,16 +46,8 @@ public final class ParamConstants {
     public static final String PROPERTIES_PARAM = "properties";
 
     //Collect Params
-    public static final String SERVER_LOG_PARAM = "serverLogs";
-    public static final String DOMAIN_XML_PARAM = "domainXml";
-    public static final String INSTANCES_DOMAIN_XML_PARAM = "instanceDomainXml";
-    public static final String INSTANCES_LOG_PARAM = "instanceLogXml";
-    public static final String DOMAIN_JVM_REPORT_PARAM = "domainJvmReport";
-    public static final String INSTANCE_JVM_REPORT_PARAM = "instanceJvmReport";
-
-     public static final String DOMAIN_THREAD_DUMP_PARAM = "domainThreadDump";
-    public static final String INSTANCE_THREAD_DUMP_PARAM = "instanceThreadDump";
     public static final String DOMAIN_NAME_PARAM = "domainName";
+    public static final String TARGET_PARAM = "target";
 
     //Upload Params
     public static final String USERNAME_PARAM = "username";
@@ -70,9 +62,17 @@ public final class ParamConstants {
     public static final String INSTANCES_DOMAIN_XML_PATH = "InstancesDomainXmlPath";
     public static final String INSTANCES_LOG_PATH = "InstancesLogPath";
     public static final String INSTANCES_NAMES = "InstancesNames";
+    public static final String STANDALONE_INSTANCES = "StandaloneInstances";
+    public static final String DEPLOYMENT_GROUPS = "DeploymentGroups";
+    public static final String CLUSTERS = "Clusters";
+    public static final String INSTANCE = "Instance";
+    public static final String NODES = "Nodes";
 
     public static final String NEXUS = "nexus";
     public static final String ZENDESK = "zendesk";
 
-    private ParamConstants(){};
+    private ParamConstants() {
+    }
+
+    ;
 }
