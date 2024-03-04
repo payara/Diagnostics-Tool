@@ -71,13 +71,7 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static fish.payara.extras.diagnostics.util.ParamConstants.CLUSTERS;
-import static fish.payara.extras.diagnostics.util.ParamConstants.DEPLOYMENT_GROUPS;
-import static fish.payara.extras.diagnostics.util.ParamConstants.DOMAIN_XML_FILE_PATH;
-import static fish.payara.extras.diagnostics.util.ParamConstants.INSTANCE;
-import static fish.payara.extras.diagnostics.util.ParamConstants.LOGS_PATH;
-import static fish.payara.extras.diagnostics.util.ParamConstants.NODES;
-import static fish.payara.extras.diagnostics.util.ParamConstants.STANDALONE_INSTANCES;
+import static fish.payara.extras.diagnostics.util.ParamConstants.*;
 
 public class CollectorService {
     Logger logger = Logger.getLogger(this.getClass().getName());
@@ -87,6 +81,10 @@ public class CollectorService {
     private Environment environment;
 
     private ProgramOptions programOptions;
+    private Boolean domainXml;
+    private Boolean serverLog;
+    private Boolean threadDump;
+    private Boolean jvmReport;
 
     Map<String, Object> parameterMap;
 
@@ -96,6 +94,22 @@ public class CollectorService {
         this.target = target;
         this.environment = environment;
         this.programOptions = programOptions;
+        init();
+    }
+
+    private void init() {
+        domainXml = true;
+        serverLog = true;
+        threadDump = true;
+        jvmReport = true;
+
+        if (parameterMap != null) {
+            domainXml = parameterMap.get(DOMAIN_XML_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(DOMAIN_XML_PARAM));
+            serverLog = parameterMap.get(SERVER_LOG_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(SERVER_LOG_PARAM));
+            threadDump = parameterMap.get(THREAD_DUMP_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(THREAD_DUMP_PARAM));
+            jvmReport = parameterMap.get(JVM_REPORT_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(JVM_REPORT_PARAM));
+
+        }
     }
 
 
@@ -224,12 +238,22 @@ public class CollectorService {
 
         if (targetType == TargetType.DOMAIN) {
 
-            Path domainXmlPath = Paths.get((String) parameterMap.get(DOMAIN_XML_FILE_PATH));
-            activeCollectors.add(new DomainXmlCollector(domainXmlPath));
-            Path domainLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
-            activeCollectors.add(new LogCollector(domainLogPath));
-            activeCollectors.add(new JVMCollector(environment, programOptions, "server", JvmCollectionType.JVM_REPORT));
-            activeCollectors.add(new JVMCollector(environment, programOptions, "server", JvmCollectionType.THREAD_DUMP));
+            if (domainXml) {
+                Path domainXmlPath = Paths.get((String) parameterMap.get(DOMAIN_XML_FILE_PATH));
+                activeCollectors.add(new DomainXmlCollector(domainXmlPath));
+            }
+            if (serverLog) {
+                Path domainLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
+                activeCollectors.add(new LogCollector(domainLogPath));
+            }
+
+            if (jvmReport) {
+                activeCollectors.add(new JVMCollector(environment, programOptions, "server", JvmCollectionType.JVM_REPORT));
+            }
+
+            if (threadDump) {
+                activeCollectors.add(new JVMCollector(environment, programOptions, "server", JvmCollectionType.THREAD_DUMP));
+            }
 
             addInstanceCollectors(activeCollectors, (List<Server>) parameterMap.get(STANDALONE_INSTANCES), "");
 
@@ -276,10 +300,20 @@ public class CollectorService {
         }
         for (Server server : serversList) {
             String finalDirSuffix = Paths.get(dirSuffix, server.getName()).toString();
-            activeCollectors.add(new DomainXmlCollector(Paths.get(nodePaths.get(server.getNodeRef()).toString(), server.getName(), "config", "domain.xml"), server.getName(), finalDirSuffix));
-            activeCollectors.add(new LogCollector(Paths.get(nodePaths.get(server.getNodeRef()).toString(), server.getName(), "logs"), server.getName(), finalDirSuffix));
-            activeCollectors.add(new JVMCollector(environment, programOptions, server.getName(), JvmCollectionType.JVM_REPORT, finalDirSuffix));
-            activeCollectors.add(new JVMCollector(environment, programOptions, server.getName(), JvmCollectionType.THREAD_DUMP, finalDirSuffix));
+            if (domainXml) {
+                activeCollectors.add(new DomainXmlCollector(Paths.get(nodePaths.get(server.getNodeRef()).toString(), server.getName(), "config", "domain.xml"), server.getName(), finalDirSuffix));
+            }
+            if (serverLog) {
+                activeCollectors.add(new LogCollector(Paths.get(nodePaths.get(server.getNodeRef()).toString(), server.getName(), "logs"), server.getName(), finalDirSuffix));
+            }
+
+            if (jvmReport) {
+                activeCollectors.add(new JVMCollector(environment, programOptions, server.getName(), JvmCollectionType.JVM_REPORT, finalDirSuffix));
+            }
+
+            if (threadDump) {
+                activeCollectors.add(new JVMCollector(environment, programOptions, server.getName(), JvmCollectionType.THREAD_DUMP, finalDirSuffix));
+            }
         }
     }
 }

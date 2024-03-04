@@ -83,6 +83,10 @@ import static fish.payara.extras.diagnostics.util.ParamConstants.INSTANCES_LOG_P
 public class CollectAsadmin extends BaseAsadmin {
     private static final String DOMAIN_NAME_PARAM = ParamConstants.DOMAIN_NAME_PARAM;
     private static final String TARGET_PARAM = ParamConstants.TARGET_PARAM;
+    private static final String SERVER_LOG_PARAM = ParamConstants.SERVER_LOG_PARAM;
+    private static final String DOMAIN_XML_PARAM = ParamConstants.DOMAIN_XML_PARAM;
+    private static final String THREAD_DUMP_PARAM = ParamConstants.THREAD_DUMP_PARAM;
+    private static final String JVM_REPORT_PARAM = ParamConstants.JVM_REPORT_PARAM;
     private static final String DOMAIN_NAME = ParamConstants.DOMAIN_NAME;
     private static final String DOMAIN_XML_FILE_PATH = ParamConstants.DOMAIN_XML_FILE_PATH;
     private static final String LOGS_PATH = ParamConstants.LOGS_PATH;
@@ -91,6 +95,18 @@ public class CollectAsadmin extends BaseAsadmin {
     private static final String NODES = ParamConstants.NODES;
     Logger LOGGER = Logger.getLogger(this.getClass().getName());
 
+    @Param(name = SERVER_LOG_PARAM, optional = true, defaultValue = "true")
+    private boolean collectServerLog;
+
+    @Param(name = DOMAIN_XML_PARAM, optional = true, defaultValue = "true")
+    private boolean collectDomainXml;
+
+    @Param(name = THREAD_DUMP_PARAM, optional = true, defaultValue = "true")
+    private boolean collectThreadDump;
+
+    @Param(name = JVM_REPORT_PARAM, optional = true, defaultValue = "true")
+    private boolean collectJvmReport;
+
     @Param(name = DOMAIN_NAME_PARAM, optional = true, primary = true, defaultValue = "domain1")
     private String domainName;
 
@@ -98,7 +114,7 @@ public class CollectAsadmin extends BaseAsadmin {
     private String target;
 
     private CollectorService collectorService;
-    private DomDocument domDocument;
+    private Domain domain;
 
     @Inject
     ServiceLocator serviceLocator;
@@ -115,7 +131,7 @@ public class CollectAsadmin extends BaseAsadmin {
      */
     @Override
     protected int executeCommand() throws CommandException {
-        domDocument = getDocument();
+        domain = getDomain();
         TargetType targetType = getTargetType();
         if (targetType == null) {
             LOGGER.info("Target not found!");
@@ -138,6 +154,9 @@ public class CollectAsadmin extends BaseAsadmin {
     }
 
     public TargetType getTargetType() {
+        if (target.equals("domain")) {
+            return TargetType.DOMAIN;
+        }
         if (getInstancesNames().contains(target)) {
             return TargetType.INSTANCE;
         }
@@ -149,10 +168,6 @@ public class CollectAsadmin extends BaseAsadmin {
         if (getClusters().getCluster(target) != null) {
             return TargetType.CLUSTER;
         }
-
-        if (target.equals("domain")) {
-            return TargetType.DOMAIN;
-        }
         return null;
     }
 
@@ -160,15 +175,23 @@ public class CollectAsadmin extends BaseAsadmin {
      * Populates parameters with Parameter options into a map. Overriden method add some more additionaly properties required by the collect command.
      *
      * @param params
-     * @param paramOptions0
-     * @return Map<String, String>
+     * @return Map<String, Object>
      */
     private Map<String, Object> populateParameters(Map<String, Object> params) {
+        //Parameter Options
+        params.put(SERVER_LOG_PARAM, getOption(SERVER_LOG_PARAM));
+        params.put(DOMAIN_XML_PARAM, getOption(DOMAIN_XML_PARAM));
+        params.put(THREAD_DUMP_PARAM, getOption(THREAD_DUMP_PARAM));
+        params.put(JVM_REPORT_PARAM, getOption(JVM_REPORT_PARAM));
+        params.put(DOMAIN_NAME, getOption(DOMAIN_NAME));
+
+        //Paths
         params.put(DOMAIN_XML_FILE_PATH, getDomainXml().getAbsolutePath());
-        params.put(DOMAIN_NAME, domainName);
         params.put(INSTANCES_DOMAIN_XML_PATH, getInstancePaths(PathType.DOMAIN));
         params.put(INSTANCES_LOG_PATH, getInstancePaths(PathType.LOG));
         params.put(LOGS_PATH, getDomainRootDir().getPath() + "/logs");
+
+        //Other
         params.put(INSTANCES_NAMES, getInstancesNames());
         params.put(STANDALONE_INSTANCES, getStandaloneLocalInstances());
         params.put(NODES, getNodes());
@@ -178,7 +201,7 @@ public class CollectAsadmin extends BaseAsadmin {
         return params;
     }
 
-    private DomDocument getDocument() {
+    private Domain getDomain() {
         File domainXmlFile = Paths.get(getDomainXml().getAbsolutePath()).toFile();
         ConfigParser configParser = new ConfigParser(serviceLocator);
 
@@ -195,27 +218,27 @@ public class CollectAsadmin extends BaseAsadmin {
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
-        return configParser.parse(domainUrl);
+        return configParser.parse(domainUrl).getRoot().createProxy(Domain.class);
     }
 
     private DeploymentGroups getDeploymentGroups() {
-        return domDocument.getRoot().createProxy(Domain.class).getDeploymentGroups();
+        return domain.getDeploymentGroups();
     }
 
     private Clusters getClusters() {
-        return domDocument.getRoot().createProxy(Domain.class).getClusters();
+        return domain.getClusters();
     }
 
     private List<Node> getNodes() {
-        return domDocument.getRoot().createProxy(Domain.class).getNodes().getNode();
+        return domain.getNodes().getNode();
     }
 
     private List<Server> getLocalInstances() {
         List<Server> instances = new ArrayList<>();
         List<Node> nodes = getNodes();
         for (Node node : nodes) {
-            if (node.isLocal() && node.getType().equals("CONFIG")) {
-                instances.addAll(domDocument.getRoot().createProxy(Domain.class).getInstancesOnNode(node.getName()));
+            if (node.isLocal()) {
+                instances.addAll(domain.getInstancesOnNode(node.getName()));
             }
         }
         return instances;
@@ -249,9 +272,8 @@ public class CollectAsadmin extends BaseAsadmin {
 
 
     private Map<String, Path> getNodePaths() {
-        DomDocument doc = domDocument;
         Map<String, Path> nodePaths = new HashMap<>();
-        for (Node node : doc.getRoot().createProxy(Domain.class).getNodes().getNode()) {
+        for (Node node : domain.getNodes().getNode()) {
             if (!node.getType().equals("CONFIG")) {
                 continue;
             }
@@ -265,9 +287,8 @@ public class CollectAsadmin extends BaseAsadmin {
     }
 
     private Map<String, List<String>> getServersInNodes() {
-        DomDocument doc = domDocument;
         Map<String, List<String>> nodesAndServers = new HashMap<>();
-        for (Server server : doc.getRoot().createProxy(Domain.class).getServers().getServer()) {
+        for (Server server : domain.getServers().getServer()) {
             if (server.getConfig().isDas()) {
                 continue;
             }
