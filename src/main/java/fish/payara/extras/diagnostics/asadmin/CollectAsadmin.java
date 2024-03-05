@@ -281,6 +281,11 @@ public class CollectAsadmin extends BaseAsadmin {
             if (!node.isLocal()) {
                 continue;
             }
+
+            if (node.getNodeDir() != null) {
+                nodePaths.put(node.getName(), Paths.get(node.getNodeDir(), node.getName()));
+                continue;
+            }
             nodePaths.put(node.getName(), Paths.get(node.getInstallDir().replace("${com.sun.aas.productRoot}", System.getProperty("com.sun.aas.productRoot")), "glassfish", "nodes", node.getName()));
         }
         return nodePaths;

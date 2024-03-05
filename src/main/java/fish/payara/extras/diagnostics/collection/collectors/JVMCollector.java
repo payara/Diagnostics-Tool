@@ -129,7 +129,7 @@ public class JVMCollector implements Collector {
                 System.out.printf("%s is offline! JVM %s will NOT be collected!%n", target, jvmCollectionType.value);
                 return true;
             }
-            return writeToFile(remoteCLICommand.executeAndReturnOutput(), target);
+            return writeToFile(result, target);
         } catch (CommandException e) {
             if (e.getMessage().contains("Remote server does not listen for requests on")) {
                 System.out.printf("Server is offline! JVM %s will NOT be collected!%n", jvmCollectionType.value);
