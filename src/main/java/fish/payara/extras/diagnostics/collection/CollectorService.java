@@ -42,13 +42,16 @@ package fish.payara.extras.diagnostics.collection;
 
 import com.sun.enterprise.admin.cli.Environment;
 import com.sun.enterprise.admin.cli.ProgramOptions;
+import com.sun.enterprise.config.serverbeans.Cluster;
+import com.sun.enterprise.config.serverbeans.Node;
+import com.sun.enterprise.config.serverbeans.Server;
+import fish.payara.enterprise.config.serverbeans.DeploymentGroup;
 import fish.payara.extras.diagnostics.collection.collectors.DomainXmlCollector;
-import fish.payara.extras.diagnostics.collection.collectors.InstanceDomainXmlCollector;
-import fish.payara.extras.diagnostics.collection.collectors.InstanceLogCollector;
 import fish.payara.extras.diagnostics.collection.collectors.JVMCollector;
 import fish.payara.extras.diagnostics.collection.collectors.LogCollector;
 import fish.payara.extras.diagnostics.util.JvmCollectionType;
 import fish.payara.extras.diagnostics.util.ParamConstants;
+import fish.payara.extras.diagnostics.util.TargetType;
 import org.glassfish.api.logging.LogLevel;
 
 import java.io.File;
@@ -57,6 +60,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -67,31 +71,45 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static fish.payara.extras.diagnostics.util.ParamConstants.*;
+
 public class CollectorService {
     Logger logger = Logger.getLogger(this.getClass().getName());
+    private TargetType targetType;
+    private String target;
 
-    private final Map<String, Collector> COLLECTORS;
+    private Environment environment;
 
-    Map<String, String> parameterMap;
-    String[] parameterOptions;
+    private ProgramOptions programOptions;
+    private Boolean domainXml;
+    private Boolean serverLog;
+    private Boolean threadDump;
+    private Boolean jvmReport;
 
-    public CollectorService(Map<String, String> params, String[] parameterOption) {
-        this(params, parameterOption, null, null);
+    Map<String, Object> parameterMap;
+
+    public CollectorService(Map<String, Object> params, TargetType targetType, Environment environment, ProgramOptions programOptions, String target) {
+        this.targetType = targetType;
+        this.parameterMap = params;
+        this.target = target;
+        this.environment = environment;
+        this.programOptions = programOptions;
+        init();
     }
 
-    public CollectorService(Map<String, String> params, String[] parameterOptions, ProgramOptions programOptions, Environment environment) {
+    private void init() {
+        domainXml = true;
+        serverLog = true;
+        threadDump = true;
+        jvmReport = true;
 
-        this.parameterMap = params;
-        this.parameterOptions = parameterOptions;
-        COLLECTORS = new HashMap<>();
-        COLLECTORS.put(ParamConstants.SERVER_LOG_PARAM, new LogCollector());
-        COLLECTORS.put(ParamConstants.DOMAIN_XML_PARAM, new DomainXmlCollector());
-        COLLECTORS.put(ParamConstants.INSTANCES_DOMAIN_XML_PARAM, new InstanceDomainXmlCollector());
-        COLLECTORS.put(ParamConstants.INSTANCES_LOG_PARAM, new InstanceLogCollector());
-        COLLECTORS.put(ParamConstants.DOMAIN_JVM_REPORT_PARAM, new JVMCollector(environment, programOptions));
-        COLLECTORS.put(ParamConstants.INSTANCE_JVM_REPORT_PARAM, new JVMCollector(environment, programOptions, true));
-        COLLECTORS.put(ParamConstants.DOMAIN_THREAD_DUMP_PARAM, new JVMCollector(environment, programOptions, JvmCollectionType.THREAD_DUMP));
-        COLLECTORS.put(ParamConstants.INSTANCE_THREAD_DUMP_PARAM, new JVMCollector(environment, programOptions, true, JvmCollectionType.THREAD_DUMP));
+        if (parameterMap != null) {
+            domainXml = parameterMap.get(DOMAIN_XML_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(DOMAIN_XML_PARAM));
+            serverLog = parameterMap.get(SERVER_LOG_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(SERVER_LOG_PARAM));
+            threadDump = parameterMap.get(THREAD_DUMP_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(THREAD_DUMP_PARAM));
+            jvmReport = parameterMap.get(JVM_REPORT_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(JVM_REPORT_PARAM));
+
+        }
     }
 
 
@@ -104,10 +122,10 @@ public class CollectorService {
      * @return int
      */
     public int executeCollection() {
-        List<Collector> activeCollectors = getActiveCollectors(parameterMap, parameterOptions, COLLECTORS);
+        List<Collector> activeCollectors = getActiveCollectors(parameterMap);
 
         int result = 0;
-        if (activeCollectors.size() != 0) {
+        if (!activeCollectors.isEmpty()) {
             for (Collector collector : activeCollectors) {
                 collector.setParams(parameterMap);
                 result = collector.collect();
@@ -117,7 +135,7 @@ public class CollectorService {
             }
         }
 
-        File file = new File(parameterMap.get(ParamConstants.DIR_PARAM));
+        File file = new File((String) parameterMap.get(ParamConstants.DIR_PARAM));
 
         try (FileOutputStream fileOutputStream = new FileOutputStream(file.getAbsolutePath() + ".zip")) {
             ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream);
@@ -211,20 +229,95 @@ public class CollectorService {
      * @param collectors
      * @return List<Collector>
      */
-    public List<Collector> getActiveCollectors(Map<String, String> parameterMap, String[] parameterOptions, Map<String, Collector> collectors) {
+    public List<Collector> getActiveCollectors(Map<String, Object> parameterMap) {
         List<Collector> activeCollectors = new ArrayList<>();
 
-        if (parameterMap == null || parameterOptions == null || collectors == null) {
+        if (parameterMap == null) {
             return activeCollectors;
         }
 
-        for (String parameter : parameterOptions) {
-            String parameterValue = parameterMap.get(parameter);
-            Boolean collectorValue = Boolean.valueOf(parameterValue);
-            if (collectorValue) {
-                activeCollectors.add(collectors.get(parameter));
+        if (targetType == TargetType.DOMAIN) {
+
+            if (domainXml) {
+                Path domainXmlPath = Paths.get((String) parameterMap.get(DOMAIN_XML_FILE_PATH));
+                activeCollectors.add(new DomainXmlCollector(domainXmlPath));
+            }
+            if (serverLog) {
+                Path domainLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
+                activeCollectors.add(new LogCollector(domainLogPath));
+            }
+
+            if (jvmReport) {
+                activeCollectors.add(new JVMCollector(environment, programOptions, "server", JvmCollectionType.JVM_REPORT));
+            }
+
+            if (threadDump) {
+                activeCollectors.add(new JVMCollector(environment, programOptions, "server", JvmCollectionType.THREAD_DUMP));
+            }
+
+            addInstanceCollectors(activeCollectors, (List<Server>) parameterMap.get(STANDALONE_INSTANCES), "");
+
+            for (DeploymentGroup deploymentGroup : (List<DeploymentGroup>) parameterMap.get(DEPLOYMENT_GROUPS)) {
+                addInstanceCollectors(activeCollectors, deploymentGroup.getInstances(), deploymentGroup.getName());
+            }
+
+            for (Cluster cluster : (List<Cluster>) parameterMap.get(CLUSTERS)) {
+                addInstanceCollectors(activeCollectors, cluster.getInstances(), cluster.getName());
+            }
+
+        }
+
+        if (targetType == TargetType.INSTANCE) {
+            if (parameterMap.get(INSTANCE) != null) {
+                List<Server> servers = new ArrayList<>();
+                servers.add((Server) parameterMap.get(INSTANCE));
+                addInstanceCollectors(activeCollectors, servers, "");
+            }
+        }
+
+        if (targetType == TargetType.DEPLOYMENT_GROUP) {
+            for (DeploymentGroup deploymentGroup : (List<DeploymentGroup>) parameterMap.get(DEPLOYMENT_GROUPS)) {
+                if (deploymentGroup.getName().equals(target)) {
+                    addInstanceCollectors(activeCollectors, deploymentGroup.getInstances(), deploymentGroup.getName());
+                }
+            }
+        }
+
+        if (targetType == TargetType.CLUSTER) {
+            for (Cluster cluster : (List<Cluster>) parameterMap.get(CLUSTERS)) {
+                if (cluster.getName().equals(target)) {
+                    addInstanceCollectors(activeCollectors, cluster.getInstances(), cluster.getName());
+                }
             }
         }
         return activeCollectors;
+    }
+
+    private void addInstanceCollectors(List<Collector> activeCollectors, List<Server> serversList, String dirSuffix) {
+        HashMap<String, Path> nodePaths = new HashMap<>();
+        for (Node node : (List<Node>) parameterMap.get(NODES)) {
+            if (node.getNodeDir() != null) {
+                nodePaths.put(node.getName(), Paths.get(node.getNodeDir(), node.getName()));
+                continue;
+            }
+            nodePaths.put(node.getName(), Paths.get(node.getInstallDir().replace("${com.sun.aas.productRoot}", System.getProperty("com.sun.aas.productRoot")), "glassfish", "nodes", node.getName()));
+        }
+        for (Server server : serversList) {
+            String finalDirSuffix = Paths.get(dirSuffix, server.getName()).toString();
+            if (domainXml) {
+                activeCollectors.add(new DomainXmlCollector(Paths.get(nodePaths.get(server.getNodeRef()).toString(), server.getName(), "config", "domain.xml"), server.getName(), finalDirSuffix));
+            }
+            if (serverLog) {
+                activeCollectors.add(new LogCollector(Paths.get(nodePaths.get(server.getNodeRef()).toString(), server.getName(), "logs"), server.getName(), finalDirSuffix));
+            }
+
+            if (jvmReport) {
+                activeCollectors.add(new JVMCollector(environment, programOptions, server.getName(), JvmCollectionType.JVM_REPORT, finalDirSuffix));
+            }
+
+            if (threadDump) {
+                activeCollectors.add(new JVMCollector(environment, programOptions, server.getName(), JvmCollectionType.THREAD_DUMP, finalDirSuffix));
+            }
+        }
     }
 }

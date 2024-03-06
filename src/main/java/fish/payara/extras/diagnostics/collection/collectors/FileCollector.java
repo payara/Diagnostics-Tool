@@ -60,9 +60,10 @@ public abstract class FileCollector implements Collector {
     private Path destination;
     private String instanceName;
 
-    private Map<String, String> params;
+    private Map<String, Object> params;
 
-    public FileCollector() {}
+    public FileCollector() {
+    }
 
     public FileCollector(String filePath, String destination) {
         this(Paths.get(filePath), Paths.get(destination));
@@ -104,7 +105,7 @@ public abstract class FileCollector implements Collector {
                 if (createIfNonExistant) {
                     logger.log(LogLevel.INFO, "Attempting to create missing path at " + path);
                     try {
-                        Files.createDirectory(path);
+                        Files.createDirectories(path);
                     } catch (IOException io) {
                         logger.log(LogLevel.WARNING, "Could not create file at " + path.toString());
                         return false;
@@ -118,12 +119,12 @@ public abstract class FileCollector implements Collector {
     }
 
     @Override
-    public Map<String, String> getParams() {
+    public Map<String, Object> getParams() {
         return params;
     }
 
     @Override
-    public void setParams(Map<String, String> params) {
+    public void setParams(Map<String, Object> params) {
         if (params != null) {
             this.params = params;
         }

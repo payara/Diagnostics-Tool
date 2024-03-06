@@ -40,12 +40,17 @@
 
 package fish.payara.extras.diagnostics.asadmin;
 
+import com.sun.enterprise.config.serverbeans.Cluster;
+import com.sun.enterprise.config.serverbeans.Clusters;
 import com.sun.enterprise.config.serverbeans.Domain;
 import com.sun.enterprise.config.serverbeans.Node;
 import com.sun.enterprise.config.serverbeans.Server;
+import fish.payara.enterprise.config.serverbeans.DeploymentGroup;
+import fish.payara.enterprise.config.serverbeans.DeploymentGroups;
 import fish.payara.extras.diagnostics.collection.CollectorService;
 import fish.payara.extras.diagnostics.util.ParamConstants;
 import fish.payara.extras.diagnostics.util.PropertiesFile;
+import fish.payara.extras.diagnostics.util.TargetType;
 import org.glassfish.api.Param;
 import org.glassfish.api.admin.CommandException;
 import org.glassfish.hk2.api.PerLookup;
@@ -67,77 +72,78 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static fish.payara.extras.diagnostics.util.ParamConstants.CLUSTERS;
+import static fish.payara.extras.diagnostics.util.ParamConstants.DEPLOYMENT_GROUPS;
+import static fish.payara.extras.diagnostics.util.ParamConstants.INSTANCE;
 import static fish.payara.extras.diagnostics.util.ParamConstants.INSTANCES_DOMAIN_XML_PATH;
 import static fish.payara.extras.diagnostics.util.ParamConstants.INSTANCES_LOG_PATH;
 
 @Service(name = "collect-diagnostics")
 @PerLookup
 public class CollectAsadmin extends BaseAsadmin {
+    private static final String DOMAIN_NAME_PARAM = ParamConstants.DOMAIN_NAME_PARAM;
+    private static final String TARGET_PARAM = ParamConstants.TARGET_PARAM;
     private static final String SERVER_LOG_PARAM = ParamConstants.SERVER_LOG_PARAM;
     private static final String DOMAIN_XML_PARAM = ParamConstants.DOMAIN_XML_PARAM;
-    private static final String INSTANCES_DOMAIN_XML_PARAM = ParamConstants.INSTANCES_DOMAIN_XML_PARAM;
-    private static final String INSTANCES_LOG_PARAM = ParamConstants.INSTANCES_LOG_PARAM;
-    private static final String DOMAIN_JVM_REPORT_PARAM = ParamConstants.DOMAIN_JVM_REPORT_PARAM;
-    private static final String INSTANCE_JVM_REPORT_PARAM = ParamConstants.INSTANCE_JVM_REPORT_PARAM;
-    private static final String DOMAIN_THREAD_DUMP_PARAM = ParamConstants.DOMAIN_THREAD_DUMP_PARAM;
-    private static final String INSTANCE_THREAD_DUMP_PARAM = ParamConstants.INSTANCE_THREAD_DUMP_PARAM;
-    private static final String DOMAIN_NAME_PARAM = ParamConstants.DOMAIN_NAME_PARAM;
-    private static final String[] PARAMETER_OPTIONS = {SERVER_LOG_PARAM, DOMAIN_XML_PARAM, INSTANCES_DOMAIN_XML_PARAM, INSTANCES_LOG_PARAM, DOMAIN_JVM_REPORT_PARAM, INSTANCE_JVM_REPORT_PARAM, DOMAIN_THREAD_DUMP_PARAM, INSTANCE_THREAD_DUMP_PARAM, DIR_PARAM};
+    private static final String THREAD_DUMP_PARAM = ParamConstants.THREAD_DUMP_PARAM;
+    private static final String JVM_REPORT_PARAM = ParamConstants.JVM_REPORT_PARAM;
     private static final String DOMAIN_NAME = ParamConstants.DOMAIN_NAME;
     private static final String DOMAIN_XML_FILE_PATH = ParamConstants.DOMAIN_XML_FILE_PATH;
     private static final String LOGS_PATH = ParamConstants.LOGS_PATH;
     private static final String INSTANCES_NAMES = ParamConstants.INSTANCES_NAMES;
+    private static final String STANDALONE_INSTANCES = ParamConstants.STANDALONE_INSTANCES;
+    private static final String NODES = ParamConstants.NODES;
     Logger LOGGER = Logger.getLogger(this.getClass().getName());
 
-    @Param(name = SERVER_LOG_PARAM, shortName = "s", optional = true, defaultValue = "true")
+    @Param(name = SERVER_LOG_PARAM, optional = true, defaultValue = "true")
     private boolean collectServerLog;
 
-    @Param(name = DOMAIN_XML_PARAM, shortName = "d", optional = true, defaultValue = "true")
+    @Param(name = DOMAIN_XML_PARAM, optional = true, defaultValue = "true")
     private boolean collectDomainXml;
 
-    @Param(name = INSTANCES_DOMAIN_XML_PARAM, optional = true, defaultValue = "true")
-    private boolean collectInstanceDomainXml;
+    @Param(name = THREAD_DUMP_PARAM, optional = true, defaultValue = "true")
+    private boolean collectThreadDump;
 
-    @Param(name = INSTANCES_LOG_PARAM, optional = true, defaultValue = "true")
-    private boolean collectInstanceLog;
-
-    @Param(name = DOMAIN_JVM_REPORT_PARAM, optional = true, defaultValue = "true")
-    private boolean collectDomainJvmReport;
-
-    @Param(name = INSTANCE_JVM_REPORT_PARAM, optional = true, defaultValue = "true")
-    private boolean collectInstanceJvmReport;
-
-    @Param(name = DOMAIN_THREAD_DUMP_PARAM, optional = true, defaultValue = "true")
-    private boolean collectDomainThreadDump;
-
-    @Param(name = INSTANCE_THREAD_DUMP_PARAM, optional = true, defaultValue = "true")
-    private boolean collectInstanceThreadDump;
+    @Param(name = JVM_REPORT_PARAM, optional = true, defaultValue = "true")
+    private boolean collectJvmReport;
 
     @Param(name = DOMAIN_NAME_PARAM, optional = true, primary = true, defaultValue = "domain1")
     private String domainName;
 
+    @Param(name = TARGET_PARAM, optional = true, defaultValue = "domain")
+    private String target;
+
     private CollectorService collectorService;
+    private Domain domain;
 
     @Inject
     ServiceLocator serviceLocator;
-    
-    /** 
+
+
+    /**
      * Execute asadmin command Collect.
-     * 
+     * <p>
      * 0 - success
      * 1 - failure
-     * 
+     *
      * @return int
      * @throws CommandException
      */
     @Override
     protected int executeCommand() throws CommandException {
-        parameterMap = populateParameters(new HashMap<String, String>(), PARAMETER_OPTIONS);
+        domain = getDomain();
+        TargetType targetType = getTargetType();
+        if (targetType == null) {
+            LOGGER.info("Target not found!");
+            return 1;
+        }
+        parameterMap = populateParameters(new HashMap<>());
+
         parameterMap = resolveDir(parameterMap);
 
-        collectorService = new CollectorService(parameterMap, PARAMETER_OPTIONS, programOpts, env);
+        collectorService = new CollectorService(parameterMap, targetType, env, programOpts, target);
         PropertiesFile props = getProperties();
-        props.store(DIR_PARAM, parameterMap.get(DIR_PARAM));
+        props.store(DIR_PARAM, (String) parameterMap.get(DIR_PARAM));
         return collectorService.executeCollection();
     }
 
@@ -147,28 +153,55 @@ public class CollectAsadmin extends BaseAsadmin {
         super.validate();
     }
 
+    public TargetType getTargetType() {
+        if (target.equals("domain")) {
+            return TargetType.DOMAIN;
+        }
+        if (getInstancesNames().contains(target)) {
+            return TargetType.INSTANCE;
+        }
+
+        if (getDeploymentGroups().getDeploymentGroup(target) != null) {
+            return TargetType.DEPLOYMENT_GROUP;
+        }
+
+        if (getClusters().getCluster(target) != null) {
+            return TargetType.CLUSTER;
+        }
+        return null;
+    }
+
     /**
      * Populates parameters with Parameter options into a map. Overriden method add some more additionaly properties required by the collect command.
-     * 
+     *
      * @param params
-     * @param paramOptions0
-     * @return Map<String, String>
+     * @return Map<String, Object>
      */
-    @Override
-    protected Map<String, String> populateParameters(Map<String, String> params, String[] paramOptions) {
-        params = super.populateParameters(params, paramOptions);
+    private Map<String, Object> populateParameters(Map<String, Object> params) {
+        //Parameter Options
+        params.put(SERVER_LOG_PARAM, getOption(SERVER_LOG_PARAM));
+        params.put(DOMAIN_XML_PARAM, getOption(DOMAIN_XML_PARAM));
+        params.put(THREAD_DUMP_PARAM, getOption(THREAD_DUMP_PARAM));
+        params.put(JVM_REPORT_PARAM, getOption(JVM_REPORT_PARAM));
+        params.put(DOMAIN_NAME, getOption(DOMAIN_NAME));
 
+        //Paths
         params.put(DOMAIN_XML_FILE_PATH, getDomainXml().getAbsolutePath());
-        params.put(DOMAIN_NAME, domainName);
         params.put(INSTANCES_DOMAIN_XML_PATH, getInstancePaths(PathType.DOMAIN));
         params.put(INSTANCES_LOG_PATH, getInstancePaths(PathType.LOG));
         params.put(LOGS_PATH, getDomainRootDir().getPath() + "/logs");
-        params.put(INSTANCES_NAMES, getInstancesNames());
 
+        //Other
+        params.put(INSTANCES_NAMES, getInstancesNames());
+        params.put(STANDALONE_INSTANCES, getStandaloneLocalInstances());
+        params.put(NODES, getNodes());
+        params.put(DEPLOYMENT_GROUPS, getDeploymentGroups().getDeploymentGroup());
+        params.put(CLUSTERS, getClusters().getCluster());
+        params.put(INSTANCE, getInstance(target));
         return params;
     }
 
-    private DomDocument getDocument() {
+    private Domain getDomain() {
         File domainXmlFile = Paths.get(getDomainXml().getAbsolutePath()).toFile();
         ConfigParser configParser = new ConfigParser(serviceLocator);
 
@@ -185,19 +218,72 @@ public class CollectAsadmin extends BaseAsadmin {
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
-        DomDocument doc = configParser.parse(domainUrl);
-        return doc;
+        return configParser.parse(domainUrl).getRoot().createProxy(Domain.class);
     }
 
-    private Map<String, Path> getNodePaths(){
-        DomDocument doc = getDocument();
+    private DeploymentGroups getDeploymentGroups() {
+        return domain.getDeploymentGroups();
+    }
+
+    private Clusters getClusters() {
+        return domain.getClusters();
+    }
+
+    private List<Node> getNodes() {
+        return domain.getNodes().getNode();
+    }
+
+    private List<Server> getLocalInstances() {
+        List<Server> instances = new ArrayList<>();
+        List<Node> nodes = getNodes();
+        for (Node node : nodes) {
+            if (node.isLocal()) {
+                instances.addAll(domain.getInstancesOnNode(node.getName()));
+            }
+        }
+        return instances;
+    }
+
+    private List<Server> getStandaloneLocalInstances() {
+        List<Server> instances = getLocalInstances();
+
+        for (DeploymentGroup dg : getDeploymentGroups().getDeploymentGroup()) {
+            for (Server dgInstance : dg.getInstances()) {
+                instances.removeIf(instance -> instance.getName().equals(dgInstance.getName()) && dgInstance.getNodeRef().equals(instance.getNodeRef()));
+            }
+        }
+
+        for (Cluster cluster : getClusters().getCluster()) {
+            for (Server clusterInstance : cluster.getInstances()) {
+                instances.removeIf(instance -> instance.getName().equals(clusterInstance.getName()) && clusterInstance.getNodeRef().equals(instance.getNodeRef()));
+            }
+        }
+        return instances;
+    }
+
+    public Server getInstance(String instance) {
+        for (Server server : getLocalInstances()) {
+            if (server.getName().equals(instance)) {
+                return server;
+            }
+        }
+        return null;
+    }
+
+
+    private Map<String, Path> getNodePaths() {
         Map<String, Path> nodePaths = new HashMap<>();
-        for (Node node : doc.getRoot().createProxy(Domain.class).getNodes().getNode()) {
+        for (Node node : domain.getNodes().getNode()) {
             if (!node.getType().equals("CONFIG")) {
                 continue;
             }
 
-            if(!node.isLocal()){
+            if (!node.isLocal()) {
+                continue;
+            }
+
+            if (node.getNodeDir() != null) {
+                nodePaths.put(node.getName(), Paths.get(node.getNodeDir(), node.getName()));
                 continue;
             }
             nodePaths.put(node.getName(), Paths.get(node.getInstallDir().replace("${com.sun.aas.productRoot}", System.getProperty("com.sun.aas.productRoot")), "glassfish", "nodes", node.getName()));
@@ -206,9 +292,8 @@ public class CollectAsadmin extends BaseAsadmin {
     }
 
     private Map<String, List<String>> getServersInNodes() {
-        DomDocument doc = getDocument();
         Map<String, List<String>> nodesAndServers = new HashMap<>();
-        for (Server server : doc.getRoot().createProxy(Domain.class).getServers().getServer()) {
+        for (Server server : domain.getServers().getServer()) {
             if (server.getConfig().isDas()) {
                 continue;
             }
@@ -225,6 +310,7 @@ public class CollectAsadmin extends BaseAsadmin {
         }
         return nodesAndServers;
     }
+
     private String getInstancePaths(PathType pathType) {
         Map<String, Path> nodePaths = getNodePaths();
         Map<String, List<String>> nodesAndServers = getServersInNodes();
@@ -235,34 +321,27 @@ public class CollectAsadmin extends BaseAsadmin {
                 continue;
             }
             if (pathType == PathType.DOMAIN) {
-                instances.forEach(s -> instanceXmlPaths.add(Paths.get(String.valueOf(nodePaths.get(nodeName)),s,"config","domain.xml")));
+                instances.forEach(s -> instanceXmlPaths.add(Paths.get(String.valueOf(nodePaths.get(nodeName)), s, "config", "domain.xml")));
                 continue;
             }
 
-            if(pathType == PathType.LOG) {
-                instances.forEach(s -> instanceXmlPaths.add(Paths.get(String.valueOf(nodePaths.get(nodeName)),s,"logs")));
+            if (pathType == PathType.LOG) {
+                instances.forEach(s -> instanceXmlPaths.add(Paths.get(String.valueOf(nodePaths.get(nodeName)), s, "logs")));
             }
         }
         return instanceXmlPaths.toString();
     }
 
-    private String getInstancesNames() {
-        Map<String, Path> nodePaths = getNodePaths();
-        Map<String, List<String>> nodesAndServers = getServersInNodes();
-        List<String> instanceList = new ArrayList<>();
+    private List<String> getInstancesNames() {
+        List<Server> localInstances = getLocalInstances();
+        List<String> instanceNames = new ArrayList<>();
+        localInstances.forEach(instance -> instanceNames.add(instance.getName()));
 
-        nodePaths.keySet().forEach(s -> {
-            if (nodesAndServers.get(s) == null) {
-                return;
-            }
-            instanceList.addAll(nodesAndServers.get(s));
-
-        });
-
-        return instanceList.toString();
+        return instanceNames;
     }
 
     enum PathType {
         DOMAIN, LOG;
     }
+
 }

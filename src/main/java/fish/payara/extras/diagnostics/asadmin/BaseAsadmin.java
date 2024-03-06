@@ -40,20 +40,18 @@
 
 package fish.payara.extras.diagnostics.asadmin;
 
+import com.sun.enterprise.admin.servermgmt.cli.LocalDomainCommand;
+import fish.payara.extras.diagnostics.util.ParamConstants;
+import fish.payara.extras.diagnostics.util.PropertiesFile;
+import org.glassfish.api.ExecutionContext;
+import org.glassfish.api.Param;
+import org.glassfish.api.ParamDefaultCalculator;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.logging.Level;
-
-import org.glassfish.api.ExecutionContext;
-import org.glassfish.api.Param;
-import org.glassfish.api.ParamDefaultCalculator;
-
-import com.sun.enterprise.admin.servermgmt.cli.LocalDomainCommand;
-
-import fish.payara.extras.diagnostics.util.ParamConstants;
-import fish.payara.extras.diagnostics.util.PropertiesFile;
 
 public abstract class BaseAsadmin extends LocalDomainCommand {
     private static final String OUTPUT_DIR_PARAM_SYS_PROP = "fish.payara.diagnostics.path";
@@ -72,22 +70,22 @@ public abstract class BaseAsadmin extends LocalDomainCommand {
     @Param(name = PROPERTIES_PARAM, shortName = "p", optional = true, defaultCalculator = DefaultPropertiesPathCalculator.class)
     protected String propertiesPath;
 
-    protected Map<String, String> parameterMap;
+    protected Map<String, Object> parameterMap;
 
-    
-    /** 
+
+    /**
      * Configures a valid directory to use in commands.
-     * 
+     *
      * @param params
      * @return Map<String, String>
      */
-    protected Map<String, String> resolveDir(Map<String, String> params) {
-        if(params == null) {
-            return params;
+    protected Map<String, Object> resolveDir(Map<String, Object> params) {
+        if (params == null) {
+            return null;
         }
 
-        if(dir != null) {
-            if(Files.isDirectory(Paths.get(dir))) {
+        if (dir != null) {
+            if (Files.isDirectory(Paths.get(dir))) {
                 dir = dir + DIR_NAME;
             }
             params.put(DIR_PARAM, dir);
@@ -98,30 +96,13 @@ public abstract class BaseAsadmin extends LocalDomainCommand {
         return params;
     }
 
-    
-    /** 
-     * Populates parameters with Parameter options into a map.
-     * 
-     * @param params
-     * @param paramOptions
-     * @return Map<String, String>
-     */
-    protected Map<String, String> populateParameters(Map<String, String> params, String[] paramOptions) {
-        for(String opt : paramOptions) {
-            params.put(opt, getOption(opt));
-        }
-
-        return params;
-    }
-
-    
-    /** 
+    /**
      * If a properties file path exists, return a new properties file at that path.
-     * 
+     *
      * @return PropertiesFile
      */
     protected PropertiesFile getProperties() {
-        if(propertiesPath != null) {
+        if (propertiesPath != null) {
             Path path = Paths.get(propertiesPath);
             return new PropertiesFile(path);
         }

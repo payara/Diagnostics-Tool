@@ -40,24 +40,39 @@
 
 package fish.payara.extras.diagnostics.collection.collectors;
 
+import fish.payara.extras.diagnostics.util.ParamConstants;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
-
-import fish.payara.extras.diagnostics.util.ParamConstants;
+import java.util.logging.Logger;
 
 public class DomainXmlCollector extends FileCollector {
 
+    private Path path;
+    private String dirSuffix;
+    private Logger LOGGER = Logger.getLogger(DomainXmlCollector.class.getName());
+
+    public DomainXmlCollector(Path path) {
+        this.path = path;
+    }
+
+    public DomainXmlCollector(Path path, String instanceName, String dirSuffix) {
+        this.path = path;
+        super.setInstanceName(instanceName);
+        this.dirSuffix = dirSuffix;
+    }
+
+
     @Override
     public int collect() {
-        Map<String, String> params = getParams();
-        if(params != null) {
+        Map<String, Object> params = getParams();
+        if (params != null) {
             Path outputPath = getPathFromParams(ParamConstants.DIR_PARAM, params);
-            Path domainXmlPath = getPathFromParams(ParamConstants.DOMAIN_XML_FILE_PATH, params);
-            if(domainXmlPath != null && outputPath != null) {
-                setFilePath(domainXmlPath);
-                setDestination(outputPath);
-                
+            if (path != null && outputPath != null) {
+                setFilePath(path);
+                setDestination(Paths.get(outputPath.toString(), dirSuffix != null ? dirSuffix : ""));
+                LOGGER.info("Collecting domain.xml from " + (getInstanceName() != null ? getInstanceName() : "server"));
                 return super.collect();
             }
         }
@@ -65,11 +80,11 @@ public class DomainXmlCollector extends FileCollector {
         return 0;
     }
 
-    private Path getPathFromParams(String key, Map<String, String> parameterMap) {
-        Map<String, String> params = parameterMap;
-        if(params != null) {
-            String valueString = params.get(key);
-            if(valueString != null) {
+    private Path getPathFromParams(String key, Map<String, Object> parameterMap) {
+        Map<String, Object> params = parameterMap;
+        if (params != null) {
+            String valueString = (String) params.get(key);
+            if (valueString != null) {
                 return Paths.get(valueString);
             }
         }
@@ -77,6 +92,5 @@ public class DomainXmlCollector extends FileCollector {
         return null;
     }
 
-    
 
 }
