@@ -47,9 +47,13 @@ import org.glassfish.api.ExecutionContext;
 import org.glassfish.api.Param;
 import org.glassfish.api.ParamDefaultCalculator;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -59,7 +63,6 @@ public abstract class BaseAsadmin extends LocalDomainCommand {
     private static final String JAV_DIR_SYS_PROP = "user.home";
 
     protected static final String DIR_PARAM = ParamConstants.DIR_PARAM;
-    protected static final String DIR_NAME = "/payara-diagnostics-" + System.currentTimeMillis();
 
     private static final String PROPERTIES_PARAM = ParamConstants.PROPERTIES_PARAM;
     private static final String PROPERTIES_FILE_NAME = "." + PROPERTIES_PARAM;
@@ -86,7 +89,11 @@ public abstract class BaseAsadmin extends LocalDomainCommand {
 
         if (dir != null) {
             if (Files.isDirectory(Paths.get(dir))) {
-                dir = dir + DIR_NAME;
+                if (!dir.endsWith(File.separator)) {
+                    dir = dir + File.separator;
+                }
+                dir = dir + "payara-diagnostics-" + getDomainName() + "-" +
+                        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH-mm-ssX").withZone(ZoneOffset.UTC).format(Instant.now());
             }
             params.put(DIR_PARAM, dir);
         }
