@@ -65,6 +65,9 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <payara.version>6.13.0</payara.version>
+
+        <javadoc.skip>true</javadoc.skip>
+        <source.skip>true</source.skip>
     </properties>
 
     <repositories>
@@ -159,6 +162,41 @@
                     </supportedProjectTypes>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.6.3</version>
+                <configuration>
+                    <detectOfflineLinks>false</detectOfflineLinks>
+                    <skip>${javadoc.skip}</skip>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <includePom>true</includePom>
+                    <skipSource>${source.skip}</skipSource>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
 
         <pluginManagement>
@@ -225,4 +263,51 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <distributionManagement>
+        <repository>
+            <id>payara-nexus-enterprise-artifacts</id>
+            <name>Payara Nexus Enterprise Artifacts</name>
+            <url>https://nexus.dev.payara.fish/repository/payara-enterprise-artifacts-private</url>
+        </repository>
+        <snapshotRepository>
+            <id>payara-nexus-enterprise-snapshots</id>
+            <name>Payara Nexus Enterprise Snapshots</name>
+            <url>https://nexus.dev.payara.fish/repository/payara-enterprise-snapshots-private</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <profiles>
+        <profile>
+            <id>release</id>
+
+            <properties>
+                <javadoc.skip>false</javadoc.skip>
+                <source.skip>false</source.skip>
+                <gpg.skip>false</gpg.skip>
+            </properties>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${gpg.skip}</skip>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
