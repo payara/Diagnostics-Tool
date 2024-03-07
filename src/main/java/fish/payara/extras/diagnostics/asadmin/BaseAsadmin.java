@@ -80,7 +80,7 @@ public abstract class BaseAsadmin extends LocalDomainCommand {
      * Configures a valid directory to use in commands.
      *
      * @param params
-     * @return Map<String, Object>
+     * @return Map&lt;String, Object&gt;
      */
     protected Map<String, Object> resolveDir(Map<String, Object> params) {
         if (params == null) {

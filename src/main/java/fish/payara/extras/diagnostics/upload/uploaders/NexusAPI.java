@@ -65,7 +65,7 @@ public class NexusAPI implements Uploader {
     private static final String CONTENT_TYPE_MULTIPART_BOUNDARY = "multipart/form-data; boundary=";
     private static final String AUTHORIZATION_HEADER = "Authorization";
 
-    private static final String REPO_SYS_PROP = System.getProperty("fish.payara.diagnostics.repo");
+    private static final String REPO_SYS_PROP_NAME = "fish.payara.diagnostics.repo";
 
     private static final int SUCCESS_HTTP_RESPONSE_CODE = 204;
 
@@ -75,7 +75,7 @@ public class NexusAPI implements Uploader {
 
     /**
      * Will upload specified file to Payara Nexus, using specified username and password for authentication.
-     * The repository that it will be uploaded to depends on {@value #REPO_SYS_PROP}
+     * The repository that it will be uploaded to depends on the value of the {@value REPO_SYS_PROP_NAME} property
      *
      * @param file
      * @param username
@@ -88,7 +88,7 @@ public class NexusAPI implements Uploader {
     }
 
     /**
-     * Constructs a Maven2 body as requested by Nexus, then uses a {@link MultiPartBodyPublisher} to upload to the provided nexus URL, using multipart/form-data.
+     * Constructs a Maven2 body as requested by Nexus, then uploads to the provided nexus URL using multipart/form-data.
      *
      * @return int
      */
@@ -156,14 +156,15 @@ public class NexusAPI implements Uploader {
     /**
      * Returns the URI required to upload to a repository.
      * <p>
-     * Will use username as the repository target, or {@value #REPO_SYS_PROP} system property if not null.
+     * Will use username as the repository target, or {@value REPO_SYS_PROP_NAME} system property if not null.
      *
      * @return URI
      */
     private String resolveNexusURL() {
         StringBuilder builder = new StringBuilder(NEXUS_URL).append("?repository=");
-        if (REPO_SYS_PROP != null) {
-            builder.append(REPO_SYS_PROP);
+        String repo = System.getProperty(REPO_SYS_PROP_NAME);
+        if (repo != null) {
+            builder.append(repo);
         } else if (username != null) {
             builder.append(username);
         }
