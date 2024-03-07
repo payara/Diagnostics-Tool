@@ -51,15 +51,14 @@ import fish.payara.extras.diagnostics.collection.CollectorService;
 import fish.payara.extras.diagnostics.util.ParamConstants;
 import fish.payara.extras.diagnostics.util.PropertiesFile;
 import fish.payara.extras.diagnostics.util.TargetType;
+import jakarta.inject.Inject;
 import org.glassfish.api.Param;
 import org.glassfish.api.admin.CommandException;
 import org.glassfish.hk2.api.PerLookup;
 import org.glassfish.hk2.api.ServiceLocator;
 import org.jvnet.hk2.annotations.Service;
 import org.jvnet.hk2.config.ConfigParser;
-import org.jvnet.hk2.config.DomDocument;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
