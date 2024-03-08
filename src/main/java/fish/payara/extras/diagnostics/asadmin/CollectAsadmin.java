@@ -57,7 +57,6 @@ import org.glassfish.hk2.api.PerLookup;
 import org.glassfish.hk2.api.ServiceLocator;
 import org.jvnet.hk2.annotations.Service;
 import org.jvnet.hk2.config.ConfigParser;
-import org.jvnet.hk2.config.DomDocument;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -72,45 +71,28 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static fish.payara.extras.diagnostics.util.ParamConstants.CLUSTERS;
-import static fish.payara.extras.diagnostics.util.ParamConstants.DEPLOYMENT_GROUPS;
-import static fish.payara.extras.diagnostics.util.ParamConstants.INSTANCE;
-import static fish.payara.extras.diagnostics.util.ParamConstants.INSTANCES_DOMAIN_XML_PATH;
-import static fish.payara.extras.diagnostics.util.ParamConstants.INSTANCES_LOG_PATH;
-
 @Service(name = "collect-diagnostics")
 @PerLookup
 public class CollectAsadmin extends BaseAsadmin {
-    private static final String DOMAIN_NAME_PARAM = ParamConstants.DOMAIN_NAME_PARAM;
-    private static final String TARGET_PARAM = ParamConstants.TARGET_PARAM;
-    private static final String SERVER_LOG_PARAM = ParamConstants.SERVER_LOG_PARAM;
-    private static final String DOMAIN_XML_PARAM = ParamConstants.DOMAIN_XML_PARAM;
-    private static final String THREAD_DUMP_PARAM = ParamConstants.THREAD_DUMP_PARAM;
-    private static final String JVM_REPORT_PARAM = ParamConstants.JVM_REPORT_PARAM;
-    private static final String DOMAIN_NAME = ParamConstants.DOMAIN_NAME;
-    private static final String DOMAIN_XML_FILE_PATH = ParamConstants.DOMAIN_XML_FILE_PATH;
-    private static final String LOGS_PATH = ParamConstants.LOGS_PATH;
-    private static final String INSTANCES_NAMES = ParamConstants.INSTANCES_NAMES;
-    private static final String STANDALONE_INSTANCES = ParamConstants.STANDALONE_INSTANCES;
-    private static final String NODES = ParamConstants.NODES;
+
     Logger LOGGER = Logger.getLogger(this.getClass().getName());
 
-    @Param(name = SERVER_LOG_PARAM, optional = true, defaultValue = "true")
+    @Param(name = ParamConstants.SERVER_LOG_PARAM, optional = true, defaultValue = "true")
     private boolean collectServerLog;
 
-    @Param(name = DOMAIN_XML_PARAM, optional = true, defaultValue = "true")
+    @Param(name = ParamConstants.DOMAIN_XML_PARAM, optional = true, defaultValue = "true")
     private boolean collectDomainXml;
 
-    @Param(name = THREAD_DUMP_PARAM, optional = true, defaultValue = "true")
+    @Param(name = ParamConstants.THREAD_DUMP_PARAM, optional = true, defaultValue = "true")
     private boolean collectThreadDump;
 
-    @Param(name = JVM_REPORT_PARAM, optional = true, defaultValue = "true")
+    @Param(name = ParamConstants.JVM_REPORT_PARAM, optional = true, defaultValue = "true")
     private boolean collectJvmReport;
 
-    @Param(name = DOMAIN_NAME_PARAM, optional = true, primary = true, defaultValue = "domain1")
+    @Param(name = ParamConstants.DOMAIN_NAME_PARAM, optional = true, primary = true, defaultValue = "domain1")
     private String domainName;
 
-    @Param(name = TARGET_PARAM, optional = true, defaultValue = "domain")
+    @Param(name = ParamConstants.TARGET_PARAM, optional = true, defaultValue = "domain")
     private String target;
 
     private CollectorService collectorService;
@@ -179,25 +161,25 @@ public class CollectAsadmin extends BaseAsadmin {
      */
     private Map<String, Object> populateParameters(Map<String, Object> params) {
         //Parameter Options
-        params.put(SERVER_LOG_PARAM, getOption(SERVER_LOG_PARAM));
-        params.put(DOMAIN_XML_PARAM, getOption(DOMAIN_XML_PARAM));
-        params.put(THREAD_DUMP_PARAM, getOption(THREAD_DUMP_PARAM));
-        params.put(JVM_REPORT_PARAM, getOption(JVM_REPORT_PARAM));
-        params.put(DOMAIN_NAME, getOption(DOMAIN_NAME));
+        params.put(ParamConstants.SERVER_LOG_PARAM, getOption(ParamConstants.SERVER_LOG_PARAM));
+        params.put(ParamConstants.DOMAIN_XML_PARAM, getOption(ParamConstants.DOMAIN_XML_PARAM));
+        params.put(ParamConstants.THREAD_DUMP_PARAM, getOption(ParamConstants.THREAD_DUMP_PARAM));
+        params.put(ParamConstants.JVM_REPORT_PARAM, getOption(ParamConstants.JVM_REPORT_PARAM));
+        params.put(ParamConstants.DOMAIN_NAME, getOption(ParamConstants.DOMAIN_NAME));
 
         //Paths
-        params.put(DOMAIN_XML_FILE_PATH, getDomainXml().getAbsolutePath());
-        params.put(INSTANCES_DOMAIN_XML_PATH, getInstancePaths(PathType.DOMAIN));
-        params.put(INSTANCES_LOG_PATH, getInstancePaths(PathType.LOG));
-        params.put(LOGS_PATH, getDomainRootDir().getPath() + "/logs");
+        params.put(ParamConstants.DOMAIN_XML_FILE_PATH, getDomainXml().getAbsolutePath());
+        params.put(ParamConstants.INSTANCES_DOMAIN_XML_PATH, getInstancePaths(PathType.DOMAIN));
+        params.put(ParamConstants.INSTANCES_LOG_PATH, getInstancePaths(PathType.LOG));
+        params.put(ParamConstants.LOGS_PATH, getDomainRootDir().getPath() + "/logs");
 
         //Other
-        params.put(INSTANCES_NAMES, getInstancesNames());
-        params.put(STANDALONE_INSTANCES, getStandaloneLocalInstances());
-        params.put(NODES, getNodes());
-        params.put(DEPLOYMENT_GROUPS, getDeploymentGroups().getDeploymentGroup());
-        params.put(CLUSTERS, getClusters().getCluster());
-        params.put(INSTANCE, getInstance(target));
+        params.put(ParamConstants.INSTANCES_NAMES, getInstancesNames());
+        params.put(ParamConstants.STANDALONE_INSTANCES, getStandaloneLocalInstances());
+        params.put(ParamConstants.NODES, getNodes());
+        params.put(ParamConstants.DEPLOYMENT_GROUPS, getDeploymentGroups().getDeploymentGroup());
+        params.put(ParamConstants.CLUSTERS, getClusters().getCluster());
+        params.put(ParamConstants.INSTANCE, getInstance(target));
         return params;
     }
 
