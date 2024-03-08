@@ -46,7 +46,7 @@
 
     <groupId>fish.payara.extras</groupId>
     <artifactId>payara-diagnostics-tool</artifactId>
-    <version>1.0</version>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>glassfish-jar</packaging>
 
     <name>payara-diagnostics-tool</name>
@@ -65,20 +65,36 @@
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <payara.version>5.36.0</payara.version>
+
+        <javadoc.skip>true</javadoc.skip>
+        <source.skip>true</source.skip>
     </properties>
 
     <repositories>
         <repository>
-            <id>payara-enterprise</id>
+            <id>payara-nexus-enterprise-artifacts</id>
             <name>Payara Enterprise Private Artifacts</name>
             <url>https://nexus.dev.payara.fish/repository/payara-enterprise-artifacts-private/</url>
         </repository>
         <repository>
-            <id>payara-nexus</id>
+            <id>payara-nexus-artifacts</id>
             <name>Payara Public Artifacts</name>
             <url>https://nexus.dev.payara.fish/repository/payara-artifacts/</url>
         </repository>
     </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>payara-nexus-enterprise-artifacts</id>
+            <name>Payara Enterprise Private Artifacts</name>
+            <url>https://nexus.dev.payara.fish/repository/payara-enterprise-artifacts-private/</url>
+        </pluginRepository>
+        <pluginRepository>
+            <id>payara-nexus-artifacts</id>
+            <name>Payara Public Artifacts</name>
+            <url>https://nexus.dev.payara.fish/repository/payara-artifacts/</url>
+        </pluginRepository>
+    </pluginRepositories>
 
     <dependencies>
         <dependency>
@@ -104,20 +120,6 @@
             <version>4.12.0</version>
         </dependency>
     </dependencies>
-
-    <pluginRepositories>
-        <pluginRepository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>payara-patched-externals</id>
-            <name>Payara Patched Externals</name>
-            <url>https://raw.github.com/payara/Payara_PatchedProjects/master</url>
-        </pluginRepository>
-    </pluginRepositories>
 
     <build>
         <finalName>${project.name}</finalName>
@@ -149,29 +151,10 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
-                <version>5.1.8</version>
-                <executions>
-                    <execution>
-                        <id>default-manifest</id>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>manifest</goal>
-                        </goals>
-                        <configuration>
-                            <instructions>
-                                <_include>-osgi.bundle</_include>
-                            </instructions>
-                            <excludeDependencies>tools-jar</excludeDependencies>
-                            <supportedProjectTypes>
-                                <supportedProjectType>glassfish-jar</supportedProjectType>
-                                <supportedProjectType>jar</supportedProjectType>
-                            </supportedProjectTypes>
-                        </configuration>
-                    </execution>
-                </executions>
+                <version>5.1.9</version>
                 <configuration>
-                    <Export-Package/>
                     <instructions>
+                        <Export-Package/>
                         <_include>-osgi.bundle</_include>
                     </instructions>
                     <excludeDependencies>tools-jar</excludeDependencies>
@@ -180,6 +163,41 @@
                         <supportedProjectType>jar</supportedProjectType>
                     </supportedProjectTypes>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.6.3</version>
+                <configuration>
+                    <detectOfflineLinks>false</detectOfflineLinks>
+                    <skip>${javadoc.skip}</skip>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <includePom>true</includePom>
+                    <skipSource>${source.skip}</skipSource>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
 
@@ -197,7 +215,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>3.2.0</version>
+                    <version>3.3.0</version>
                     <executions>
                         <execution>
                             <id>default-jar</id>
@@ -225,7 +243,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>3.1.2</version>
+                    <version>3.6.1</version>
                     <executions>
                         <execution>
                             <phase>package</phase>
@@ -247,4 +265,51 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <distributionManagement>
+        <repository>
+            <id>payara-nexus-enterprise-artifacts</id>
+            <name>Payara Nexus Enterprise Artifacts</name>
+            <url>https://nexus.dev.payara.fish/repository/payara-enterprise-artifacts-private</url>
+        </repository>
+        <snapshotRepository>
+            <id>payara-nexus-enterprise-snapshots</id>
+            <name>Payara Nexus Enterprise Snapshots</name>
+            <url>https://nexus.dev.payara.fish/repository/payara-enterprise-snapshots-private</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <profiles>
+        <profile>
+            <id>release</id>
+
+            <properties>
+                <javadoc.skip>false</javadoc.skip>
+                <source.skip>false</source.skip>
+                <gpg.skip>false</gpg.skip>
+            </properties>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${gpg.skip}</skip>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

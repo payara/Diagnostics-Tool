@@ -225,9 +225,7 @@ public class CollectorService {
      * Returns list of collectors which are enabled from user parameters.
      *
      * @param parameterMap
-     * @param parameterOptions
-     * @param collectors
-     * @return List<Collector>
+     * @return List&lt;Collector&gt;
      */
     public List<Collector> getActiveCollectors(Map<String, Object> parameterMap) {
         List<Collector> activeCollectors = new ArrayList<>();
