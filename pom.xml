@@ -46,7 +46,7 @@
 
     <groupId>fish.payara.extras</groupId>
     <artifactId>payara-diagnostics-tool</artifactId>
-    <version>1.0</version>
+    <version>2.0.0-SNAPSHOT</version>
     <packaging>glassfish-jar</packaging>
 
     <name>payara-diagnostics-tool</name>
@@ -62,23 +62,41 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-        <payara.version>5.36.0</payara.version>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <payara.version>6.13.0</payara.version>
+
+        <javadoc.skip>true</javadoc.skip>
+        <source.skip>true</source.skip>
     </properties>
 
     <repositories>
         <repository>
-            <id>payara-enterprise</id>
-            <name>Payara Enterprise Private Artifacts</name>
-            <url>https://nexus.dev.payara.fish/repository/payara-enterprise-artifacts-private/</url>
-        </repository>
-        <repository>
-            <id>payara-nexus</id>
+            <id>payara-nexus-artifacts</id>
             <name>Payara Public Artifacts</name>
             <url>https://nexus.dev.payara.fish/repository/payara-artifacts/</url>
         </repository>
     </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>payara-nexus-artifacts</id>
+            <name>Payara Public Artifacts</name>
+            <url>https://nexus.dev.payara.fish/repository/payara-artifacts/</url>
+        </pluginRepository>
+    </pluginRepositories>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>fish.payara.server.core</groupId>
+                <artifactId>core-bom</artifactId>
+                <version>${payara.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -88,15 +106,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>fish.payara.server.internal.admin</groupId>
+            <groupId>fish.payara.server.core.admin</groupId>
             <artifactId>server-mgmt</artifactId>
-            <version>${payara.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.14.1</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
@@ -104,20 +119,6 @@
             <version>4.12.0</version>
         </dependency>
     </dependencies>
-
-    <pluginRepositories>
-        <pluginRepository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>payara-patched-externals</id>
-            <name>Payara Patched Externals</name>
-            <url>https://raw.github.com/payara/Payara_PatchedProjects/master</url>
-        </pluginRepository>
-    </pluginRepositories>
 
     <build>
         <finalName>${project.name}</finalName>
@@ -134,7 +135,7 @@
             <plugin>
                 <groupId>org.glassfish.hk2</groupId>
                 <artifactId>hk2-inhabitant-generator</artifactId>
-                <version>2.6.1.payara-p1</version>
+                <version>3.0.2</version>
                 <executions>
                     <execution>
                         <goals>
@@ -149,29 +150,10 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
-                <version>5.1.8</version>
-                <executions>
-                    <execution>
-                        <id>default-manifest</id>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>manifest</goal>
-                        </goals>
-                        <configuration>
-                            <instructions>
-                                <_include>-osgi.bundle</_include>
-                            </instructions>
-                            <excludeDependencies>tools-jar</excludeDependencies>
-                            <supportedProjectTypes>
-                                <supportedProjectType>glassfish-jar</supportedProjectType>
-                                <supportedProjectType>jar</supportedProjectType>
-                            </supportedProjectTypes>
-                        </configuration>
-                    </execution>
-                </executions>
+                <version>5.1.9</version>
                 <configuration>
-                    <Export-Package/>
                     <instructions>
+                        <Export-Package/>
                         <_include>-osgi.bundle</_include>
                     </instructions>
                     <excludeDependencies>tools-jar</excludeDependencies>
@@ -181,6 +163,41 @@
                     </supportedProjectTypes>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.6.3</version>
+                <configuration>
+                    <detectOfflineLinks>false</detectOfflineLinks>
+                    <skip>${javadoc.skip}</skip>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <includePom>true</includePom>
+                    <skipSource>${source.skip}</skipSource>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
 
         <pluginManagement>
@@ -188,16 +205,16 @@
                 <plugin>
                     <groupId>org.glassfish.hk2</groupId>
                     <artifactId>osgiversion-maven-plugin</artifactId>
-                    <version>2.6.1</version>
+                    <version>3.0.2</version>
                 </plugin>
                 <plugin>
                     <groupId>org.glassfish.build</groupId>
                     <artifactId>command-security-maven-plugin</artifactId>
-                    <version>1.0.13</version>
+                    <version>1.0.17</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>3.2.0</version>
+                    <version>3.3.0</version>
                     <executions>
                         <execution>
                             <id>default-jar</id>
@@ -225,7 +242,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>3.1.2</version>
+                    <version>3.6.1</version>
                     <executions>
                         <execution>
                             <phase>package</phase>
@@ -247,4 +264,51 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <distributionManagement>
+        <repository>
+            <id>payara-nexus-enterprise-artifacts</id>
+            <name>Payara Nexus Enterprise Artifacts</name>
+            <url>https://nexus.dev.payara.fish/repository/payara-enterprise-artifacts-private</url>
+        </repository>
+        <snapshotRepository>
+            <id>payara-nexus-enterprise-snapshots</id>
+            <name>Payara Nexus Enterprise Snapshots</name>
+            <url>https://nexus.dev.payara.fish/repository/payara-enterprise-snapshots-private</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <profiles>
+        <profile>
+            <id>release</id>
+
+            <properties>
+                <javadoc.skip>false</javadoc.skip>
+                <source.skip>false</source.skip>
+                <gpg.skip>false</gpg.skip>
+            </properties>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${gpg.skip}</skip>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
