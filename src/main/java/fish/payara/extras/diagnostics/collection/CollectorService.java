@@ -323,6 +323,9 @@ public class CollectorService {
             if (threadDump) {
                 activeCollectors.add(new JVMCollector(environment, programOptions, server.getName(), JvmCollectionType.THREAD_DUMP, finalDirSuffix));
             }
+            if (heapDump) {
+                activeCollectors.add(new HeapDumpCollector(server.getName(), programOptions, environment, finalDirSuffix));
+            }
         }
     }
 }
