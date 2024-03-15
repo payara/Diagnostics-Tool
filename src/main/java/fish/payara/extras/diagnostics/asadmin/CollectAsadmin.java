@@ -95,6 +95,9 @@ public class CollectAsadmin extends BaseAsadmin {
     @Param(name = ParamConstants.TARGET_PARAM, optional = true, defaultValue = "domain")
     private String target;
 
+    @Param(name = ParamConstants.HEAP_DUMP_PARAM, optional = true, defaultValue = "true")
+    private boolean collectHeapDump;
+
     private CollectorService collectorService;
     private Domain domain;
 
@@ -165,6 +168,7 @@ public class CollectAsadmin extends BaseAsadmin {
         params.put(ParamConstants.DOMAIN_XML_PARAM, getOption(ParamConstants.DOMAIN_XML_PARAM));
         params.put(ParamConstants.THREAD_DUMP_PARAM, getOption(ParamConstants.THREAD_DUMP_PARAM));
         params.put(ParamConstants.JVM_REPORT_PARAM, getOption(ParamConstants.JVM_REPORT_PARAM));
+        params.put(ParamConstants.HEAP_DUMP_PARAM, getOption(ParamConstants.HEAP_DUMP_PARAM));
         params.put(ParamConstants.DOMAIN_NAME, getOption(ParamConstants.DOMAIN_NAME));
 
         //Paths
