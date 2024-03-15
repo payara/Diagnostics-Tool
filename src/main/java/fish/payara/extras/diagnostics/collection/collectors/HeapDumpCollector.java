@@ -58,14 +58,17 @@ public class HeapDumpCollector implements Collector {
 
             RemoteCLICommand remoteCLICommand = new RemoteCLICommand("generate-heap-dump", programOptions, environment);
             String result = remoteCLICommand.executeAndReturnOutput();
-            System.out.println(result);
+            LOGGER.info(result);
             if (result.startsWith("Warning:") && result.contains("seems to be offline; command generate-heap-dump was not replicated to that instance")) {
-                System.out.printf("%s is offline! Heap Dump will NOT be collected!%n", target);
-                return 1;
+                LOGGER.warning(target + "is offline! Heap Dump will NOT be collected!");
             }
         } catch (CommandException e) {
             if (e.getMessage().contains("Remote server does not listen for requests on")) {
-                System.out.print("Server is offline! Heap Dump will not be collected!\n");
+                LOGGER.warning("Server is offline! Heap Dump will not be collected!");
+                return 0;
+            }
+            if (e.getMessage().contains("has never been started; command generate-heap-dump was not replicated to that instance")) {
+                LOGGER.warning(target + " has never been started! Heap Dump will not be collected!");
                 return 0;
             }
 
