@@ -52,6 +52,7 @@ public final class ParamConstants {
     public static final String DOMAIN_XML_PARAM = "domainXml";
     public static final String THREAD_DUMP_PARAM = "threadDump";
     public static final String JVM_REPORT_PARAM = "jvmReport";
+    public static final String HEAP_DUMP_PARAM = "heapDump";
 
     //Upload Params
     public static final String USERNAME_PARAM = "username";
