@@ -72,6 +72,10 @@ public class HeapDumpCollector implements Collector {
                 return 0;
             }
 
+            if (e.getMessage().contains("Command generate-heap-dump not found.")) {
+                LOGGER.warning("This version of Payara does not support heap dump generation.");
+                return 0;
+            }
             throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
