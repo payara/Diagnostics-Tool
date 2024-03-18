@@ -47,6 +47,7 @@ import com.sun.enterprise.config.serverbeans.Node;
 import com.sun.enterprise.config.serverbeans.Server;
 import fish.payara.enterprise.config.serverbeans.DeploymentGroup;
 import fish.payara.extras.diagnostics.collection.collectors.DomainXmlCollector;
+import fish.payara.extras.diagnostics.collection.collectors.HeapDumpCollector;
 import fish.payara.extras.diagnostics.collection.collectors.JVMCollector;
 import fish.payara.extras.diagnostics.collection.collectors.LogCollector;
 import fish.payara.extras.diagnostics.util.JvmCollectionType;
@@ -85,6 +86,7 @@ public class CollectorService {
     private Boolean serverLog;
     private Boolean threadDump;
     private Boolean jvmReport;
+    private Boolean heapDump;
 
     Map<String, Object> parameterMap;
 
@@ -102,13 +104,14 @@ public class CollectorService {
         serverLog = true;
         threadDump = true;
         jvmReport = true;
+        heapDump = true;
 
         if (parameterMap != null) {
             domainXml = parameterMap.get(DOMAIN_XML_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(DOMAIN_XML_PARAM));
             serverLog = parameterMap.get(SERVER_LOG_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(SERVER_LOG_PARAM));
             threadDump = parameterMap.get(THREAD_DUMP_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(THREAD_DUMP_PARAM));
             jvmReport = parameterMap.get(JVM_REPORT_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(JVM_REPORT_PARAM));
-
+            heapDump = parameterMap.get(HEAP_DUMP_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(HEAP_DUMP_PARAM));
         }
     }
 
@@ -253,6 +256,10 @@ public class CollectorService {
                 activeCollectors.add(new JVMCollector(environment, programOptions, "server", JvmCollectionType.THREAD_DUMP));
             }
 
+            if (heapDump) {
+                activeCollectors.add(new HeapDumpCollector("server", programOptions, environment));
+            }
+
             addInstanceCollectors(activeCollectors, (List<Server>) parameterMap.get(STANDALONE_INSTANCES), "");
 
             for (DeploymentGroup deploymentGroup : (List<DeploymentGroup>) parameterMap.get(DEPLOYMENT_GROUPS)) {
@@ -315,6 +322,9 @@ public class CollectorService {
 
             if (threadDump) {
                 activeCollectors.add(new JVMCollector(environment, programOptions, server.getName(), JvmCollectionType.THREAD_DUMP, finalDirSuffix));
+            }
+            if (heapDump) {
+                activeCollectors.add(new HeapDumpCollector(server.getName(), programOptions, environment, finalDirSuffix));
             }
         }
     }
