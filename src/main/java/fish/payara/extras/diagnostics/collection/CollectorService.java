@@ -51,17 +51,18 @@ import fish.payara.extras.diagnostics.collection.collectors.HeapDumpCollector;
 import fish.payara.extras.diagnostics.collection.collectors.JVMCollector;
 import fish.payara.extras.diagnostics.collection.collectors.LogCollector;
 import fish.payara.extras.diagnostics.util.JvmCollectionType;
-import fish.payara.extras.diagnostics.util.ParamConstants;
 import fish.payara.extras.diagnostics.util.TargetType;
 import org.glassfish.api.logging.LogLevel;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -72,7 +73,19 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static fish.payara.extras.diagnostics.util.ParamConstants.*;
+import static fish.payara.extras.diagnostics.util.ParamConstants.CLUSTERS;
+import static fish.payara.extras.diagnostics.util.ParamConstants.DEPLOYMENT_GROUPS;
+import static fish.payara.extras.diagnostics.util.ParamConstants.DIR_PARAM;
+import static fish.payara.extras.diagnostics.util.ParamConstants.DOMAIN_XML_FILE_PATH;
+import static fish.payara.extras.diagnostics.util.ParamConstants.DOMAIN_XML_PARAM;
+import static fish.payara.extras.diagnostics.util.ParamConstants.HEAP_DUMP_PARAM;
+import static fish.payara.extras.diagnostics.util.ParamConstants.INSTANCE;
+import static fish.payara.extras.diagnostics.util.ParamConstants.JVM_REPORT_PARAM;
+import static fish.payara.extras.diagnostics.util.ParamConstants.LOGS_PATH;
+import static fish.payara.extras.diagnostics.util.ParamConstants.NODES;
+import static fish.payara.extras.diagnostics.util.ParamConstants.SERVER_LOG_PARAM;
+import static fish.payara.extras.diagnostics.util.ParamConstants.STANDALONE_INSTANCES;
+import static fish.payara.extras.diagnostics.util.ParamConstants.THREAD_DUMP_PARAM;
 
 public class CollectorService {
     Logger logger = Logger.getLogger(this.getClass().getName());
@@ -127,30 +140,33 @@ public class CollectorService {
     public int executeCollection() {
         List<Collector> activeCollectors = getActiveCollectors(parameterMap);
 
+        if (activeCollectors.isEmpty()) {
+            logger.info("No collectors are active. Nothing will be collected!");
+            return 0;
+        }
+
         int result = 0;
-        if (!activeCollectors.isEmpty()) {
-            for (Collector collector : activeCollectors) {
-                collector.setParams(parameterMap);
-                result = collector.collect();
-                if (result != 0) {
-                    return result;
-                }
+        for (Collector collector : activeCollectors) {
+            collector.setParams(parameterMap);
+            result = collector.collect();
+            if (result != 0) {
+                return result;
             }
         }
 
-        File file = new File((String) parameterMap.get(ParamConstants.DIR_PARAM));
+        Path filePath = Paths.get((String) parameterMap.get(DIR_PARAM));
 
-        try (FileOutputStream fileOutputStream = new FileOutputStream(file.getAbsolutePath() + ".zip")) {
-            ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream);
-            compressDirectory(file, file.getName(), zipOutputStream);
+        ZipOutputStream zipOutputStream = null;
+        try (FileOutputStream fileOutputStream = new FileOutputStream(filePath.toFile() + ".zip")) {
+            zipOutputStream = new ZipOutputStream(fileOutputStream);
+            compressDirectory(filePath, zipOutputStream);
             zipOutputStream.close();
 
-            cleanUpDirectory(file);
+            cleanUpDirectory(filePath.toFile());
         } catch (IOException e) {
             logger.log(LogLevel.SEVERE, "Could not zip collected files.");
             return 1;
         }
-
         //Save output to properties, to make uplaod seamless for the user
 
         return result;
@@ -165,32 +181,16 @@ public class CollectorService {
      * @param zipOutputStream
      * @throws IOException
      */
-    private void compressDirectory(File file, String fileName, ZipOutputStream zipOutputStream) throws IOException {
-        if (file.isHidden()) {
-            return;
-        }
+    private void compressDirectory(Path filePath, ZipOutputStream zipOutputStream) throws IOException {
 
-        if (file.isDirectory()) {
-
-            zipOutputStream.putNextEntry(fileName.endsWith(File.separator) ? new ZipEntry(fileName) : new ZipEntry(fileName + File.separator));
-
-            File[] children = file.listFiles();
-            for (File childFile : children) {
-                compressDirectory(childFile, fileName + File.separator + childFile.getName(), zipOutputStream);
+        Files.walkFileTree(filePath, new SimpleFileVisitor<Path>() {
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                zipOutputStream.putNextEntry(new ZipEntry(filePath.relativize(file).toString()));
+                Files.copy(file, zipOutputStream);
+                zipOutputStream.closeEntry();
+                return FileVisitResult.CONTINUE;
             }
-            return;
-        }
-
-        FileInputStream fileInputStream = new FileInputStream(file);
-        ZipEntry zipEntry = new ZipEntry(fileName);
-        zipOutputStream.putNextEntry(zipEntry);
-        byte[] bytes = new byte[1024];
-        int length;
-        while ((length = fileInputStream.read(bytes)) >= 0) {
-            zipOutputStream.write(bytes, 0, length);
-        }
-
-        fileInputStream.close();
+        });
     }
 
 
@@ -205,7 +205,7 @@ public class CollectorService {
         try (Stream<Path> walk = Files.walk(path)) {
             walk
                     .sorted(Comparator.reverseOrder())
-                    .forEach(x -> deleteDirectory(x));
+                    .forEach(this::deleteDirectory);
         }
     }
 
