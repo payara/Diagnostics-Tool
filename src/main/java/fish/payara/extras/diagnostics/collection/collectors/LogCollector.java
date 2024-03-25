@@ -121,12 +121,11 @@ public class LogCollector extends FileCollector {
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
 
             Path relativePath = path.relativize(file);
+            if (!file.getFileName().toString().contains(".log")) {
+                return FileVisitResult.CONTINUE;
+            }
 
             if (instanceName != null) {
-                if (relativePath.startsWith(instanceName)) {
-                    return FileVisitResult.CONTINUE;
-                }
-                Files.createDirectories(destination.resolve(path.relativize(file)).getParent());
                 String prefix = instanceName + "-";
                 if ((prefix + relativePath).startsWith(prefix + instanceName)) {
                     prefix = "";
