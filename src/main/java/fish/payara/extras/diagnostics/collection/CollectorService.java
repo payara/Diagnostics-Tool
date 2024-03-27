@@ -43,72 +43,64 @@ package fish.payara.extras.diagnostics.collection;
 import com.sun.enterprise.admin.cli.Environment;
 import com.sun.enterprise.admin.cli.ProgramOptions;
 import com.sun.enterprise.config.serverbeans.Cluster;
-import com.sun.enterprise.config.serverbeans.Node;
+import com.sun.enterprise.config.serverbeans.Domain;
 import com.sun.enterprise.config.serverbeans.Server;
+import com.sun.enterprise.universal.process.ProcessManager;
+import com.sun.enterprise.universal.process.ProcessManagerException;
+import com.sun.enterprise.util.SystemPropertyConstants;
 import fish.payara.enterprise.config.serverbeans.DeploymentGroup;
 import fish.payara.extras.diagnostics.collection.collectors.DomainXmlCollector;
 import fish.payara.extras.diagnostics.collection.collectors.HeapDumpCollector;
 import fish.payara.extras.diagnostics.collection.collectors.JVMCollector;
 import fish.payara.extras.diagnostics.collection.collectors.LogCollector;
+import fish.payara.extras.diagnostics.util.DomainUtil;
 import fish.payara.extras.diagnostics.util.JvmCollectionType;
 import fish.payara.extras.diagnostics.util.TargetType;
 import org.glassfish.api.logging.LogLevel;
+import org.glassfish.hk2.api.ServiceLocator;
+import org.jvnet.hk2.config.ConfigParser;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static fish.payara.extras.diagnostics.util.ParamConstants.CLUSTERS;
-import static fish.payara.extras.diagnostics.util.ParamConstants.DEPLOYMENT_GROUPS;
-import static fish.payara.extras.diagnostics.util.ParamConstants.DIR_PARAM;
-import static fish.payara.extras.diagnostics.util.ParamConstants.DOMAIN_XML_FILE_PATH;
-import static fish.payara.extras.diagnostics.util.ParamConstants.DOMAIN_XML_PARAM;
-import static fish.payara.extras.diagnostics.util.ParamConstants.HEAP_DUMP_PARAM;
-import static fish.payara.extras.diagnostics.util.ParamConstants.INSTANCE;
-import static fish.payara.extras.diagnostics.util.ParamConstants.JVM_REPORT_PARAM;
-import static fish.payara.extras.diagnostics.util.ParamConstants.LOGS_PATH;
-import static fish.payara.extras.diagnostics.util.ParamConstants.NODES;
-import static fish.payara.extras.diagnostics.util.ParamConstants.SERVER_LOG_PARAM;
-import static fish.payara.extras.diagnostics.util.ParamConstants.STANDALONE_INSTANCES;
-import static fish.payara.extras.diagnostics.util.ParamConstants.THREAD_DUMP_PARAM;
+import static fish.payara.extras.diagnostics.util.ParamConstants.*;
 
 public class CollectorService {
-    Logger logger = Logger.getLogger(this.getClass().getName());
-    private TargetType targetType;
-    private String target;
-
-    private Environment environment;
-
-    private ProgramOptions programOptions;
+    private static final Logger LOGGER = Logger.getLogger(CollectorService.class.getName());
+    private final String target;
+    private final Environment environment;
+    private final ProgramOptions programOptions;
     private Boolean domainXml;
     private Boolean serverLog;
     private Boolean threadDump;
     private Boolean jvmReport;
     private Boolean heapDump;
+    private Domain domain;
+    private DomainUtil domainUtil;
+    private final ServiceLocator serviceLocator;
 
-    Map<String, Object> parameterMap;
+    private final Map<String, Object> parameterMap;
 
-    public CollectorService(Map<String, Object> params, TargetType targetType, Environment environment, ProgramOptions programOptions, String target) {
-        this.targetType = targetType;
+    public CollectorService(Map<String, Object> params, Environment environment, ProgramOptions programOptions, String target, ServiceLocator serviceLocator) {
         this.parameterMap = params;
         this.target = target;
         this.environment = environment;
         this.programOptions = programOptions;
+        this.serviceLocator = serviceLocator;
         init();
     }
 
@@ -138,10 +130,54 @@ public class CollectorService {
      * @return int
      */
     public int executeCollection() {
-        List<Collector> activeCollectors = getActiveCollectors(parameterMap);
+        if (parameterMap == null) {
+            return 1;
+        }
+
+        if (parameterMap.containsKey(DOMAIN_XML_FILE_PATH)) {
+            domain = getDomain((String) parameterMap.get(DOMAIN_XML_FILE_PATH));
+        }
+
+        List<Collector> activeCollectors;
+
+        if (domain == null) {
+            if (target.equals("domain")) {
+                LOGGER.info("No domain found! Nothing will be collected");
+                return 1;
+            }
+            String instanceRoot;
+            File asadmin = new File(SystemPropertyConstants.getAsAdminScriptLocation());
+            List<String> command = new ArrayList<>();
+            command.add(asadmin.getAbsolutePath());
+            command.add("--interactive=false");
+            command.add("_get-instance-install-dir");
+            command.add(target);
+
+            ProcessManager processManager = new ProcessManager(command);
+            processManager.waitForReaderThreads(true);
+            try {
+                processManager.setEcho(false);
+                processManager.execute();
+                if (processManager.getExitValue() == 0) {
+                    String result = processManager.getStdout();
+                    instanceRoot = result.replace("Command _get-instance-install-dir executed successfully.", "").trim();
+                } else {
+                    LOGGER.info("Target not found!");
+                    return 1;
+                }
+            } catch (ProcessManagerException e) {
+                throw new RuntimeException(e);
+            }
+            activeCollectors = getLocalCollectors(instanceRoot);
+
+        } else {
+            domainUtil = new DomainUtil(domain);
+            activeCollectors = getActiveCollectors(parameterMap, getTargetType());
+        }
+
 
         if (activeCollectors.isEmpty()) {
-            logger.info("No collectors are active. Nothing will be collected!");
+            LOGGER.info("No collectors are active. Nothing will be collected!");
             return 0;
         }
 
@@ -156,15 +192,14 @@ public class CollectorService {
 
         Path filePath = Paths.get((String) parameterMap.get(DIR_PARAM));
 
-        ZipOutputStream zipOutputStream = null;
         try (FileOutputStream fileOutputStream = new FileOutputStream(filePath.toFile() + ".zip")) {
-            zipOutputStream = new ZipOutputStream(fileOutputStream);
+            ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream);
             compressDirectory(filePath, zipOutputStream);
             zipOutputStream.close();
 
             cleanUpDirectory(filePath.toFile());
         } catch (IOException e) {
-            logger.log(LogLevel.SEVERE, "Could not zip collected files.");
+            LOGGER.log(LogLevel.SEVERE, "Could not zip collected files.");
             return 1;
         }
         //Save output to properties, to make uplaod seamless for the user
@@ -172,17 +207,33 @@ public class CollectorService {
         return result;
     }
 
+    public TargetType getTargetType() {
+        if (target.equals("domain")) {
+            return TargetType.DOMAIN;
+        }
+        if (domainUtil.getInstancesNames().contains(target)) {
+            return TargetType.INSTANCE;
+        }
+
+        if (domainUtil.getDeploymentGroups().getDeploymentGroup(target) != null) {
+            return TargetType.DEPLOYMENT_GROUP;
+        }
+
+        if (domainUtil.getClusters().getCluster(target) != null) {
+            return TargetType.CLUSTER;
+        }
+        return null;
+    }
+
 
     /**
      * Compresses the collected directory into a zip folder.
      *
-     * @param file
-     * @param fileName
+     * @param filePath
      * @param zipOutputStream
      * @throws IOException
      */
     private void compressDirectory(Path filePath, ZipOutputStream zipOutputStream) throws IOException {
-
         Files.walkFileTree(filePath, new SimpleFileVisitor<Path>() {
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                 zipOutputStream.putNextEntry(new ZipEntry(filePath.relativize(file).toString()));
@@ -219,7 +270,7 @@ public class CollectorService {
         try {
             Files.delete(path);
         } catch (IOException e) {
-            logger.log(LogLevel.INFO, "Could not cleanup directory at {0}", path.toString());
+            LOGGER.log(LogLevel.INFO, "Could not cleanup directory at {0}", path.toString());
         }
     }
 
@@ -230,13 +281,12 @@ public class CollectorService {
      * @param parameterMap
      * @return List&lt;Collector&gt;
      */
-    public List<Collector> getActiveCollectors(Map<String, Object> parameterMap) {
+    public List<Collector> getActiveCollectors(Map<String, Object> parameterMap, TargetType targetType) {
         List<Collector> activeCollectors = new ArrayList<>();
 
         if (parameterMap == null) {
             return activeCollectors;
         }
-
         if (targetType == TargetType.DOMAIN) {
 
             if (domainXml) {
@@ -260,28 +310,26 @@ public class CollectorService {
                 activeCollectors.add(new HeapDumpCollector("server", programOptions, environment));
             }
 
-            addInstanceCollectors(activeCollectors, (List<Server>) parameterMap.get(STANDALONE_INSTANCES), "");
+            addInstanceCollectors(activeCollectors, domainUtil.getStandaloneLocalInstances(), "");
 
-            for (DeploymentGroup deploymentGroup : (List<DeploymentGroup>) parameterMap.get(DEPLOYMENT_GROUPS)) {
+            for (DeploymentGroup deploymentGroup : domainUtil.getDeploymentGroups().getDeploymentGroup()) {
                 addInstanceCollectors(activeCollectors, deploymentGroup.getInstances(), deploymentGroup.getName());
             }
 
-            for (Cluster cluster : (List<Cluster>) parameterMap.get(CLUSTERS)) {
+            for (Cluster cluster : domainUtil.getClusters().getCluster()) {
                 addInstanceCollectors(activeCollectors, cluster.getInstances(), cluster.getName());
             }
 
         }
 
         if (targetType == TargetType.INSTANCE) {
-            if (parameterMap.get(INSTANCE) != null) {
-                List<Server> servers = new ArrayList<>();
-                servers.add((Server) parameterMap.get(INSTANCE));
-                addInstanceCollectors(activeCollectors, servers, "");
-            }
+            List<Server> servers = new ArrayList<>();
+            servers.add(domainUtil.getInstance(target));
+            addInstanceCollectors(activeCollectors, servers, "");
         }
 
         if (targetType == TargetType.DEPLOYMENT_GROUP) {
-            for (DeploymentGroup deploymentGroup : (List<DeploymentGroup>) parameterMap.get(DEPLOYMENT_GROUPS)) {
+            for (DeploymentGroup deploymentGroup : domainUtil.getDeploymentGroups().getDeploymentGroup()) {
                 if (deploymentGroup.getName().equals(target)) {
                     addInstanceCollectors(activeCollectors, deploymentGroup.getInstances(), deploymentGroup.getName());
                 }
@@ -289,7 +337,7 @@ public class CollectorService {
         }
 
         if (targetType == TargetType.CLUSTER) {
-            for (Cluster cluster : (List<Cluster>) parameterMap.get(CLUSTERS)) {
+            for (Cluster cluster : domainUtil.getClusters().getCluster()) {
                 if (cluster.getName().equals(target)) {
                     addInstanceCollectors(activeCollectors, cluster.getInstances(), cluster.getName());
                 }
@@ -298,22 +346,36 @@ public class CollectorService {
         return activeCollectors;
     }
 
-    private void addInstanceCollectors(List<Collector> activeCollectors, List<Server> serversList, String dirSuffix) {
-        HashMap<String, Path> nodePaths = new HashMap<>();
-        for (Node node : (List<Node>) parameterMap.get(NODES)) {
-            if (node.getNodeDir() != null) {
-                nodePaths.put(node.getName(), Paths.get(node.getNodeDir(), node.getName()));
-                continue;
-            }
-            nodePaths.put(node.getName(), Paths.get(node.getInstallDir().replace("${com.sun.aas.productRoot}", System.getProperty("com.sun.aas.productRoot")), "glassfish", "nodes", node.getName()));
+    private List<Collector> getLocalCollectors(String instanceRoot) {
+        List<Collector> activeCollectors = new ArrayList<>();
+        if (domainXml) {
+            activeCollectors.add(new DomainXmlCollector(Paths.get(instanceRoot, "config", "domain.xml"), target, null));
         }
+        if (serverLog) {
+            activeCollectors.add(new LogCollector(Paths.get(instanceRoot, "logs"), target));
+        }
+
+        if (jvmReport) {
+            activeCollectors.add(new JVMCollector(environment, programOptions, target, JvmCollectionType.JVM_REPORT));
+        }
+
+        if (threadDump) {
+            activeCollectors.add(new JVMCollector(environment, programOptions, target, JvmCollectionType.THREAD_DUMP));
+        }
+        if (heapDump) {
+            activeCollectors.add(new HeapDumpCollector(target, programOptions, environment));
+        }
+        return activeCollectors;
+    }
+
+    private void addInstanceCollectors(List<Collector> activeCollectors, List<Server> serversList, String dirSuffix) {
         for (Server server : serversList) {
             String finalDirSuffix = Paths.get(dirSuffix, server.getName()).toString();
             if (domainXml) {
-                activeCollectors.add(new DomainXmlCollector(Paths.get(nodePaths.get(server.getNodeRef()).toString(), server.getName(), "config", "domain.xml"), server.getName(), finalDirSuffix));
+                activeCollectors.add(new DomainXmlCollector(Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "config", "domain.xml"), server.getName(), finalDirSuffix));
             }
             if (serverLog) {
-                activeCollectors.add(new LogCollector(Paths.get(nodePaths.get(server.getNodeRef()).toString(), server.getName(), "logs"), server.getName(), finalDirSuffix));
+                activeCollectors.add(new LogCollector(Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "logs"), server.getName(), finalDirSuffix));
             }
 
             if (jvmReport) {
@@ -327,5 +389,25 @@ public class CollectorService {
                 activeCollectors.add(new HeapDumpCollector(server.getName(), programOptions, environment, finalDirSuffix));
             }
         }
+    }
+
+    private Domain getDomain(String domainXmlPath) {
+        File domainXml = Paths.get(domainXmlPath).toFile();
+        ConfigParser configParser = new ConfigParser(serviceLocator);
+
+        try {
+            configParser.logUnrecognisedElements(false);
+        } catch (NoSuchMethodError noSuchMethodError) {
+            LOGGER.log(Level.FINE, "Using a version of ConfigParser that does not support disabling log messages via method",
+                    noSuchMethodError);
+        }
+
+        URL domainUrl;
+        try {
+            domainUrl = domainXml.toURI().toURL();
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+        return configParser.parse(domainUrl).getRoot().createProxy(Domain.class);
     }
 }
