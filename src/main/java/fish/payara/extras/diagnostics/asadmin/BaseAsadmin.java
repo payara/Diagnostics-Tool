@@ -92,7 +92,7 @@ public abstract class BaseAsadmin extends LocalDomainCommand {
                 if (!dir.endsWith(File.separator)) {
                     dir = dir + File.separator;
                 }
-                String domainName = getDomainName() == null ? "" : "-" +getDomainName();
+                String domainName = getDomainName() == null ? "" : "-" + getDomainName();
                 dir = dir + "payara-diagnostics" + domainName + "-" +
                         DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH-mm-ssX").withZone(ZoneOffset.UTC).format(Instant.now());
             }
