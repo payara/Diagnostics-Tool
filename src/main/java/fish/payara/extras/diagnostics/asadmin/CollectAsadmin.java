@@ -50,6 +50,7 @@ import org.glassfish.hk2.api.PerLookup;
 import org.glassfish.hk2.api.ServiceLocator;
 import org.jvnet.hk2.annotations.Service;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -135,7 +136,7 @@ public class CollectAsadmin extends BaseAsadmin {
         try {
             if (this.getDomainsDir() != null) {
                 if (getDomainRootDir() != null) {
-                    params.put(ParamConstants.LOGS_PATH, getDomainRootDir().getPath() + "/logs");
+                    params.put(ParamConstants.LOGS_PATH, getDomainRootDir().getPath() + File.separator + "logs");
                 }
             }
         } catch (NullPointerException ignored) {
