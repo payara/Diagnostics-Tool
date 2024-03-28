@@ -53,6 +53,7 @@ public final class ParamConstants {
     public static final String THREAD_DUMP_PARAM = "threadDump";
     public static final String JVM_REPORT_PARAM = "jvmReport";
     public static final String HEAP_DUMP_PARAM = "heapDump";
+    public static final String NODE_DIR_PARAM = "nodeDir";
     //Upload Params
     public static final String USERNAME_PARAM = "username";
     public static final String PASSWORD_PARAM = "password";

@@ -42,6 +42,7 @@ package fish.payara.extras.diagnostics.collection;
 
 import com.sun.enterprise.admin.cli.Environment;
 import com.sun.enterprise.admin.cli.ProgramOptions;
+import com.sun.enterprise.admin.cli.remote.RemoteCLICommand;
 import com.sun.enterprise.config.serverbeans.Cluster;
 import com.sun.enterprise.config.serverbeans.Domain;
 import com.sun.enterprise.config.serverbeans.Server;
@@ -56,6 +57,7 @@ import fish.payara.extras.diagnostics.collection.collectors.LogCollector;
 import fish.payara.extras.diagnostics.util.DomainUtil;
 import fish.payara.extras.diagnostics.util.JvmCollectionType;
 import fish.payara.extras.diagnostics.util.TargetType;
+import org.glassfish.api.admin.CommandException;
 import org.glassfish.api.logging.LogLevel;
 import org.glassfish.hk2.api.ServiceLocator;
 import org.jvnet.hk2.config.ConfigParser;
@@ -91,16 +93,19 @@ public class CollectorService {
     private Boolean heapDump;
     private Domain domain;
     private DomainUtil domainUtil;
+    private final String domainName;
     private final ServiceLocator serviceLocator;
-
     private final Map<String, Object> parameterMap;
+    private final String nodeDir;
 
-    public CollectorService(Map<String, Object> params, Environment environment, ProgramOptions programOptions, String target, ServiceLocator serviceLocator) {
+    public CollectorService(Map<String, Object> params, Environment environment, ProgramOptions programOptions, String target, ServiceLocator serviceLocator, String domainName, String nodeDir) {
         this.parameterMap = params;
         this.target = target;
         this.environment = environment;
         this.programOptions = programOptions;
         this.serviceLocator = serviceLocator;
+        this.domainName = domainName;
+        this.nodeDir = nodeDir;
         init();
     }
 
@@ -137,7 +142,6 @@ public class CollectorService {
         if (parameterMap.containsKey(DOMAIN_XML_FILE_PATH)) {
             domain = getDomain((String) parameterMap.get(DOMAIN_XML_FILE_PATH));
         }
-
         List<Collector> activeCollectors;
 
         if (domain == null) {
@@ -145,34 +149,19 @@ public class CollectorService {
                 LOGGER.info("No domain found! Nothing will be collected");
                 return 1;
             }
-            String instanceRoot;
-            File asadmin = new File(SystemPropertyConstants.getAsAdminScriptLocation());
-            List<String> command = new ArrayList<>();
-            command.add(asadmin.getAbsolutePath());
-            command.add("--interactive=false");
-            command.add("_get-instance-install-dir");
-            command.add(target);
-
-            ProcessManager processManager = new ProcessManager(command);
-            processManager.waitForReaderThreads(true);
-            try {
-                processManager.setEcho(false);
-                processManager.execute();
-                if (processManager.getExitValue() == 0) {
-                    String result = processManager.getStdout();
-                    instanceRoot = result.replace("Command _get-instance-install-dir executed successfully.", "").trim();
-                } else {
-                    LOGGER.info("Target not found!");
-                    return 1;
-                }
-            } catch (ProcessManagerException e) {
-                throw new RuntimeException(e);
-            }
+            String instanceRoot = getInstanceRoot();
+            if (instanceRoot == null) return 1;
             activeCollectors = getLocalCollectors(instanceRoot);
 
         } else {
             domainUtil = new DomainUtil(domain);
             activeCollectors = getActiveCollectors(parameterMap, getTargetType());
+
+            if (activeCollectors.isEmpty()) {
+                String instanceRoot = getInstanceRoot();
+                if (instanceRoot == null) return 1;
+                activeCollectors = getLocalCollectors(instanceRoot);
+            }
         }
 
 
@@ -205,6 +194,38 @@ public class CollectorService {
         //Save output to properties, to make uplaod seamless for the user
 
         return result;
+    }
+
+    private String getInstanceRoot() {
+        String instanceRoot;
+        File asadmin = new File(SystemPropertyConstants.getAsAdminScriptLocation());
+        List<String> command = new ArrayList<>();
+        command.add(asadmin.getAbsolutePath());
+        command.add("--interactive=false");
+        command.add("_get-instance-install-dir");
+
+        if (nodeDir != null) {
+            command.add("--nodedir=" + nodeDir);
+        }
+
+        command.add(target);
+
+        ProcessManager processManager = new ProcessManager(command);
+        processManager.waitForReaderThreads(true);
+        try {
+            processManager.setEcho(false);
+            processManager.execute();
+            if (processManager.getExitValue() == 0) {
+                String result = processManager.getStdout();
+                instanceRoot = result.replace("Command _get-instance-install-dir executed successfully.", "").trim();
+            } else {
+                LOGGER.info("Target not found! Try specifying the nodedir parameter");
+                return null;
+            }
+        } catch (ProcessManagerException e) {
+            throw new RuntimeException(e);
+        }
+        return instanceRoot;
     }
 
     public TargetType getTargetType() {
@@ -298,16 +319,17 @@ public class CollectorService {
                 activeCollectors.add(new LogCollector(domainLogPath));
             }
 
+            boolean correctDomainRunning = correctDomainRunning();
             if (jvmReport) {
-                activeCollectors.add(new JVMCollector(environment, programOptions, "server", JvmCollectionType.JVM_REPORT));
+                activeCollectors.add(new JVMCollector(environment, programOptions, "server", JvmCollectionType.JVM_REPORT, correctDomainRunning));
             }
 
             if (threadDump) {
-                activeCollectors.add(new JVMCollector(environment, programOptions, "server", JvmCollectionType.THREAD_DUMP));
+                activeCollectors.add(new JVMCollector(environment, programOptions, "server", JvmCollectionType.THREAD_DUMP, correctDomainRunning));
             }
 
             if (heapDump) {
-                activeCollectors.add(new HeapDumpCollector("server", programOptions, environment));
+                activeCollectors.add(new HeapDumpCollector("server", programOptions, environment, correctDomainRunning));
             }
 
             addInstanceCollectors(activeCollectors, domainUtil.getStandaloneLocalInstances(), "");
@@ -409,5 +431,29 @@ public class CollectorService {
             throw new RuntimeException(e);
         }
         return configParser.parse(domainUrl).getRoot().createProxy(Domain.class);
+    }
+
+    private Boolean correctDomainRunning() {
+        try {
+            RemoteCLICommand remoteCLICommand = new RemoteCLICommand("get", programOptions, environment);
+            String result = remoteCLICommand.executeAndReturnOutput("get", "property.administrative.domain.name");
+
+            if (result.contains("Remote server does not listen for requests on")) {
+                return false;
+            }
+
+            if (result.contains("=")) {
+                String[] keyValue = result.split("=");
+                if (keyValue.length == 2) {
+                    if (keyValue[1].equalsIgnoreCase(domainName)) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        } catch (CommandException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

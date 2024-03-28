@@ -64,6 +64,7 @@ public class JVMCollector implements Collector {
     private JvmCollectionType jvmCollectionType;
     private String target;
     private String dirSuffix;
+    private boolean correctDomain;
     private Logger LOGGER = Logger.getLogger(JVMCollector.class.getName());
 
     public JVMCollector(Environment environment, ProgramOptions programOptions, String target, JvmCollectionType jvmCollectionType) {
@@ -71,6 +72,15 @@ public class JVMCollector implements Collector {
         this.programOptions = programOptions;
         this.jvmCollectionType = jvmCollectionType;
         this.target = target;
+        this.correctDomain = true;
+    }
+
+    public JVMCollector(Environment environment, ProgramOptions programOptions, String target, JvmCollectionType jvmCollectionType, boolean correctDomain) {
+        this.environment = environment;
+        this.programOptions = programOptions;
+        this.jvmCollectionType = jvmCollectionType;
+        this.target = target;
+        this.correctDomain = correctDomain;
     }
 
     public JVMCollector(Environment environment, ProgramOptions programOptions, String target, JvmCollectionType jvmCollectionType, String dirSuffix) {
@@ -79,10 +89,16 @@ public class JVMCollector implements Collector {
         this.jvmCollectionType = jvmCollectionType;
         this.target = target;
         this.dirSuffix = dirSuffix;
+        this.correctDomain = true;
     }
 
     @Override
     public int collect() {
+        LOGGER.info("Collecting " + (jvmCollectionType == JvmCollectionType.JVM_REPORT ? "jvm report" : "thread dump") + " from " + target);
+        if (!correctDomain) {
+            LOGGER.info("The wrong targeted domain is not running!");
+            return 0;
+        }
         if (collectReport(target)) {
             return 0;
         }
@@ -120,7 +136,6 @@ public class JVMCollector implements Collector {
             parameterMap.add("target", target);
             parameterMap.add("type", jvmCollectionType.value);
             programOptions.updateOptions(parameterMap);
-            LOGGER.info("Collecting " + (jvmCollectionType == JvmCollectionType.JVM_REPORT ? "jvm report" : "thread dump") + " from " + target);
 
             RemoteCLICommand remoteCLICommand = new RemoteCLICommand("generate-jvm-report", programOptions, environment);
             String result = remoteCLICommand.executeAndReturnOutput();
