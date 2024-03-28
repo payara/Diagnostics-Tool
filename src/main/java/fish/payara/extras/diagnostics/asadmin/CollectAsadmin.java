@@ -79,9 +79,11 @@ public class CollectAsadmin extends BaseAsadmin {
     @Param(name = ParamConstants.HEAP_DUMP_PARAM, optional = true, defaultValue = "true")
     private boolean collectHeapDump;
 
+    @Param(name = ParamConstants.NODE_DIR_PARAM, optional = true)
+    private String nodeDir;
+
     @Inject
     ServiceLocator serviceLocator;
-
 
     /**
      * Execute asadmin command Collect.
@@ -96,7 +98,7 @@ public class CollectAsadmin extends BaseAsadmin {
         parameterMap = populateParameters(new HashMap<>());
         parameterMap = resolveDir(parameterMap);
 
-        CollectorService collectorService = new CollectorService(parameterMap, env, programOpts, target, serviceLocator);
+        CollectorService collectorService = new CollectorService(parameterMap, env, programOpts, target, serviceLocator, domainName, nodeDir);
         PropertiesFile props = getProperties();
         props.store(DIR_PARAM, (String) parameterMap.get(DIR_PARAM));
         return collectorService.executeCollection();

@@ -23,6 +23,7 @@ public class HeapDumpCollector implements Collector {
     private ProgramOptions programOptions;
     private Logger LOGGER = Logger.getLogger(HeapDumpCollector.class.getName());
     private Environment environment;
+    private boolean correctDomain;
 
     private String dirSuffix;
 
@@ -30,6 +31,14 @@ public class HeapDumpCollector implements Collector {
         this.target = target;
         this.programOptions = programOptions;
         this.environment = environment;
+        this.correctDomain = true;
+    }
+
+    public HeapDumpCollector(String target, ProgramOptions programOptions, Environment environment, boolean correctDomain) {
+        this.target = target;
+        this.programOptions = programOptions;
+        this.environment = environment;
+        this.correctDomain = correctDomain;
     }
 
     public HeapDumpCollector(String target, ProgramOptions programOptions, Environment environment, String dirSuffix) {
@@ -37,10 +46,18 @@ public class HeapDumpCollector implements Collector {
         this.programOptions = programOptions;
         this.environment = environment;
         this.dirSuffix = dirSuffix;
+        this.correctDomain = true;
     }
+
     @Override
     public int collect() {
-        try{
+        LOGGER.info("Collecting Heap Dump from " + target);
+
+        if (!correctDomain) {
+            LOGGER.info("The targeted domain is not running!");
+            return 0;
+        }
+        try {
             ParameterMap parameterMap = new ParameterMap();
             if (!target.equals("server")) {
                 parameterMap.add("target", target);
@@ -54,7 +71,6 @@ public class HeapDumpCollector implements Collector {
             parameterMap.add("outputDir", outputPath.toString());
             programOptions.updateOptions(parameterMap);
             programOptions.setInteractive(false);
-            LOGGER.info("Collecting Heap Dump from " + target);
 
             RemoteCLICommand remoteCLICommand = new RemoteCLICommand("generate-heap-dump", programOptions, environment);
             String result = remoteCLICommand.executeAndReturnOutput();
@@ -76,7 +92,7 @@ public class HeapDumpCollector implements Collector {
                 LOGGER.warning("This version of Payara does not support heap dump generation.");
                 return 0;
             }
-            
+
             if (e.getMessage().contains("Unable to find a valid target with name")) {
                 LOGGER.info(String.format("The domain containing %s is not running! Heap Dump will not be collected", target));
                 return 0;
