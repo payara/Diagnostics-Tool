@@ -96,7 +96,7 @@ public class JVMCollector implements Collector {
     public int collect() {
         LOGGER.info("Collecting " + (jvmCollectionType == JvmCollectionType.JVM_REPORT ? "jvm report" : "thread dump") + " from " + target);
         if (!correctDomain) {
-            LOGGER.info("The wrong targeted domain is not running!");
+            LOGGER.info("The targeted domain is not running!");
             return 0;
         }
         if (collectReport(target)) {

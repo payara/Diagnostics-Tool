@@ -1,6 +1,7 @@
 package fish.payara.extras.diagnostics.asadmin;
 
 
+import com.sun.enterprise.admin.cli.cluster.LocalInstanceCommand;
 import com.sun.enterprise.admin.servermgmt.services.Strings;
 import com.sun.enterprise.util.StringUtils;
 import org.glassfish.api.Param;
