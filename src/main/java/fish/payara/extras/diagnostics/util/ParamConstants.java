@@ -53,7 +53,7 @@ public final class ParamConstants {
     public static final String THREAD_DUMP_PARAM = "threadDump";
     public static final String JVM_REPORT_PARAM = "jvmReport";
     public static final String HEAP_DUMP_PARAM = "heapDump";
-
+    public static final String NODE_DIR_PARAM = "nodeDir";
     //Upload Params
     public static final String USERNAME_PARAM = "username";
     public static final String PASSWORD_PARAM = "password";
@@ -64,14 +64,6 @@ public final class ParamConstants {
     public static final String DOMAIN_NAME = "DomainName";
     public static final String DOMAIN_XML_FILE_PATH = "DomainXMLFilePath";
     public static final String LOGS_PATH = "LogPath";
-    public static final String INSTANCES_DOMAIN_XML_PATH = "InstancesDomainXmlPath";
-    public static final String INSTANCES_LOG_PATH = "InstancesLogPath";
-    public static final String INSTANCES_NAMES = "InstancesNames";
-    public static final String STANDALONE_INSTANCES = "StandaloneInstances";
-    public static final String DEPLOYMENT_GROUPS = "DeploymentGroups";
-    public static final String CLUSTERS = "Clusters";
-    public static final String INSTANCE = "Instance";
-    public static final String NODES = "Nodes";
 
     public static final String NEXUS = "nexus";
     public static final String ZENDESK = "zendesk";
