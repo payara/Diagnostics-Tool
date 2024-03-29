@@ -126,19 +126,23 @@ public class JVMCollector implements Collector {
             String result = remoteCLICommand.executeAndReturnOutput();
 
             if (result.startsWith("Warning:") && result.contains("seems to be offline; command generate-jvm-report was not replicated to that instance")) {
-                System.out.printf("%s is offline! JVM %s will NOT be collected!%n", target, jvmCollectionType.value);
+                LOGGER.info(String.format("%s is offline! JVM %s will NOT be collected!%n", target, jvmCollectionType.value));
                 return true;
             }
             return writeToFile(result, target);
         } catch (CommandException e) {
             if (e.getMessage().contains("Remote server does not listen for requests on")) {
-                System.out.printf("Server is offline! JVM %s will NOT be collected!%n", jvmCollectionType.value);
+                LOGGER.info(String.format("Server is offline! JVM %s will NOT be collected!%n", jvmCollectionType.value));
                 return true;
             }
 
             if (e.getMessage().contains("has never been started")) {
-                System.out.printf("%s has not been started! JVM %s can not be collected!%n", target, jvmCollectionType.value);
+                LOGGER.info(String.format("%s has not been started! JVM %s can not be collected!%n", target, jvmCollectionType.value));
+                return true;
+            }
 
+            if (e.getMessage().contains("Unable to find a valid target with name")) {
+                LOGGER.info(String.format("The domain containing %s is not running! JVM %s will not be collected", target, jvmCollectionType.value));
                 return true;
             }
             throw new RuntimeException(e);
