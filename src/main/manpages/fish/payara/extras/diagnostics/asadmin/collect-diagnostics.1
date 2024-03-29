@@ -12,6 +12,8 @@ SYNOPSIS
            domainname
 
 DESCRIPTION
+       Collects diagnostics from a local Payara Server instance.
+
        The collect-diagnostics subcommand by default will collect the domain.xml,
        thread dump, heap dump and jvm report from the DAS, Instances, Deployment
        Groups and Clusters. Specific Instances, Deployment Groups and Clusters can
@@ -34,10 +36,10 @@ OPTIONS
            Whether to collect the domain.xml. The default is true.
 
        --threaddump
-           Whether to collect the thread dump. The default is true.
+           Whether to collect a thread dump. The default is true.
 
         --heapdump
-           Whether to collect the heap dump. The default is true.
+           Whether to collect a heap dump. The default is true.
 
        --jvmreport
            Whether to collect the jvm report. The default is true.
@@ -66,7 +68,7 @@ OPERANDS
            The domain to collect diagnostics from. The default is domain1.
 
 EXAMPLES
-       Example 1, Collect Every Diagnostic from domain1.
+       Example 1, Collect every diagnostic from domain1.
 
            This example collects everything from domain1.
 
