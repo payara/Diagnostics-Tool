@@ -453,7 +453,7 @@ public class CollectorService {
 
             return false;
         } catch (CommandException e) {
-            throw new RuntimeException(e);
+            return false;
         }
     }
 }

@@ -65,6 +65,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <payara.version>6.13.0</payara.version>
+        <payara.core.version>6.6.0</payara.core.version>
 
         <javadoc.skip>true</javadoc.skip>
         <source.skip>true</source.skip>
@@ -119,9 +120,9 @@
             <version>4.12.0</version>
         </dependency>
         <dependency>
-            <groupId>fish.payara.server.internal.cluster</groupId>
+            <groupId>fish.payara.server.core.cluster</groupId>
             <artifactId>cluster-cli</artifactId>
-            <version>${payara.version}</version>
+            <version>${payara.core.version}</version>
         </dependency>
     </dependencies>
 
