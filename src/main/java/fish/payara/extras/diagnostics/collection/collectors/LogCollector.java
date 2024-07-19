@@ -55,19 +55,23 @@ import java.util.Map;
 public class LogCollector extends FileCollector {
 
     private Path logPath;
+    private Path accessLogPath;
     private String dirSuffix;
 
     public LogCollector(Path logPath) {
         this.logPath = logPath;
+        this.accessLogPath = logPath.resolve("access");
     }
 
     public LogCollector(Path logPath, String instanceName) {
         this.logPath = logPath;
+        this.accessLogPath = logPath.resolve("access");
         super.setInstanceName(instanceName);
     }
 
     public LogCollector(Path logPath, String instanceName, String dirSuffix) {
         this.logPath = logPath;
+        this.accessLogPath = logPath.resolve("access");
         super.setInstanceName(instanceName);
         this.dirSuffix = dirSuffix;
     }
@@ -83,7 +87,7 @@ public class LogCollector extends FileCollector {
         if (confirmPath(logPath, false) && confirmPath(outputPath, true)) {
             try {
                 logger.info("Collecting logs from " + (getInstanceName() != null ? getInstanceName() : "server"));
-                CopyDirectoryVisitor copyDirectoryVisitor = new CopyDirectoryVisitor(outputPath);
+                CopyDirectoryVisitor copyDirectoryVisitor = new CopyDirectoryVisitor(outputPath, ".log");
                 copyDirectoryVisitor.setInstanceName(getInstanceName());
                 Files.walkFileTree(logPath, copyDirectoryVisitor);
             } catch (IOException io) {
@@ -92,6 +96,20 @@ public class LogCollector extends FileCollector {
                 return 1;
             }
         }
+
+        if (confirmPath(accessLogPath, false) && confirmPath(outputPath.resolve("access"), true)) {
+            try {
+                logger.info("Collecting access logs from " + (getInstanceName() != null ? getInstanceName() : "server"));
+                CopyDirectoryVisitor copyDirectoryVisitor = new CopyDirectoryVisitor(outputPath.resolve("access"), ".txt");
+                copyDirectoryVisitor.setInstanceName(getInstanceName());
+                Files.walkFileTree(accessLogPath, copyDirectoryVisitor);
+            } catch (IOException io) {
+                logger.log(LogLevel.SEVERE, "Could not copy directory " + accessLogPath.toString() + " to path " + outputPathString);
+                io.printStackTrace();
+                return 1;
+            }
+        }
+
         return 0;
     }
 
@@ -99,11 +117,13 @@ public class LogCollector extends FileCollector {
 
         private final Path destination;
         private Path path = null;
+        private final String fileExtension;
 
         private String instanceName;
 
-        public CopyDirectoryVisitor(Path destination) {
+        public CopyDirectoryVisitor(Path destination, String fileExtension) {
             this.destination = destination;
+            this.fileExtension = fileExtension;
         }
 
         @Override
@@ -121,7 +141,7 @@ public class LogCollector extends FileCollector {
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
 
             Path relativePath = path.relativize(file);
-            if (!file.getFileName().toString().contains(".log")) {
+            if (!file.getFileName().toString().endsWith(fileExtension)) {
                 return FileVisitResult.CONTINUE;
             }
 
