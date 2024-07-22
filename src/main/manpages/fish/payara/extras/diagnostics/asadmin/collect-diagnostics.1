@@ -5,7 +5,7 @@ NAME
 
 SYNOPSIS
            collect-diagnostics [--help]
-           [--serverlog={true|false}] [--domainxml={true|false}]
+           [--logs={true|false}] [--domainxml={true|false}]
            [--threaddump={true|false}] [--heapdump={true|false}]
            [--jvmreport={true|false}] [--domaindir domaindir]
            [--nodedir nodedir] [--dir dir] [--target target-name]
@@ -29,8 +29,8 @@ OPTIONS
        --help, -?
            Displays the help text for the subcommand.
 
-       --serverlog
-            Whether to collect server logs. The default is true.
+       --logs
+            Whether to collect all logs. The default is true.
 
        --domainxml
            Whether to collect the domain.xml. The default is true.

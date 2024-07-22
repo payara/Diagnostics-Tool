@@ -58,8 +58,8 @@ import java.util.Map;
 @PerLookup
 public class CollectAsadmin extends BaseAsadmin {
 
-    @Param(name = ParamConstants.SERVER_LOG_PARAM, optional = true, defaultValue = "true")
-    private boolean collectServerLog;
+    @Param(name = ParamConstants.LOGS_PARAM, optional = true, defaultValue = "true")
+    private boolean collectLogs;
 
     @Param(name = ParamConstants.DOMAIN_XML_PARAM, optional = true, defaultValue = "true")
     private boolean collectDomainXml;
@@ -121,7 +121,7 @@ public class CollectAsadmin extends BaseAsadmin {
      */
     private Map<String, Object> populateParameters(Map<String, Object> params) {
         //Parameter Options
-        params.put(ParamConstants.SERVER_LOG_PARAM, getOption(ParamConstants.SERVER_LOG_PARAM));
+        params.put(ParamConstants.LOGS_PARAM, getOption(ParamConstants.LOGS_PARAM));
         params.put(ParamConstants.DOMAIN_XML_PARAM, getOption(ParamConstants.DOMAIN_XML_PARAM));
         params.put(ParamConstants.THREAD_DUMP_PARAM, getOption(ParamConstants.THREAD_DUMP_PARAM));
         params.put(ParamConstants.JVM_REPORT_PARAM, getOption(ParamConstants.JVM_REPORT_PARAM));

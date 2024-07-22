@@ -48,7 +48,7 @@ public final class ParamConstants {
     //Collect Params
     public static final String DOMAIN_NAME_PARAM = "domainName";
     public static final String TARGET_PARAM = "target";
-    public static final String SERVER_LOG_PARAM = "serverLog";
+    public static final String LOGS_PARAM = "logs";
     public static final String DOMAIN_XML_PARAM = "domainXml";
     public static final String THREAD_DUMP_PARAM = "threadDump";
     public static final String JVM_REPORT_PARAM = "jvmReport";
