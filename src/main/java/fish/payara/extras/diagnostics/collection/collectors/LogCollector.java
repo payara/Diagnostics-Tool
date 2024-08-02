@@ -117,13 +117,12 @@ public class LogCollector extends FileCollector {
 
         private final Path destination;
         private Path path = null;
-        private final String fileExtension;
-
+        private final String fileContains;
         private String instanceName;
 
-        public CopyDirectoryVisitor(Path destination, String fileExtension) {
+        public CopyDirectoryVisitor(Path destination, String fileContains) {
             this.destination = destination;
-            this.fileExtension = fileExtension;
+            this.fileContains = fileContains;
         }
 
         @Override
@@ -141,7 +140,7 @@ public class LogCollector extends FileCollector {
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
 
             Path relativePath = path.relativize(file);
-            if (!file.getFileName().toString().endsWith(fileExtension)) {
+            if (!file.getFileName().toString().contains(fileContains)) {
                 return FileVisitResult.CONTINUE;
             }
 
