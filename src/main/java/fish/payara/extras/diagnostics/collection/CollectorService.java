@@ -87,7 +87,8 @@ public class CollectorService {
     private final Environment environment;
     private final ProgramOptions programOptions;
     private Boolean domainXml;
-    private Boolean logs;
+    private Boolean accessLogs;
+    private Boolean serverLogs;
     private Boolean threadDump;
     private Boolean jvmReport;
     private Boolean heapDump;
@@ -111,14 +112,16 @@ public class CollectorService {
 
     private void init() {
         domainXml = true;
-        logs = true;
+        serverLogs = true;
+        accessLogs = true;
         threadDump = true;
         jvmReport = true;
         heapDump = true;
 
         if (parameterMap != null) {
             domainXml = parameterMap.get(DOMAIN_XML_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(DOMAIN_XML_PARAM));
-            logs = parameterMap.get(LOGS_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(LOGS_PARAM));
+            serverLogs = parameterMap.get(LOGS_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(LOGS_PARAM));
+            accessLogs = parameterMap.get(ACCESS_LOG_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(ACCESS_LOG_PARAM));
             threadDump = parameterMap.get(THREAD_DUMP_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(THREAD_DUMP_PARAM));
             jvmReport = parameterMap.get(JVM_REPORT_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(JVM_REPORT_PARAM));
             heapDump = parameterMap.get(HEAP_DUMP_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(HEAP_DUMP_PARAM));
@@ -314,9 +317,9 @@ public class CollectorService {
                 Path domainXmlPath = Paths.get((String) parameterMap.get(DOMAIN_XML_FILE_PATH));
                 activeCollectors.add(new DomainXmlCollector(domainXmlPath));
             }
-            if (logs) {
+            if (serverLogs) {
                 Path domainLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
-                activeCollectors.add(new LogCollector(domainLogPath));
+                activeCollectors.add(new LogCollector(domainLogPath, accessLogs));
             }
 
             boolean correctDomainRunning = correctDomainRunning();
@@ -373,8 +376,8 @@ public class CollectorService {
         if (domainXml) {
             activeCollectors.add(new DomainXmlCollector(Paths.get(instanceRoot, "config", "domain.xml"), target, null));
         }
-        if (logs) {
-            activeCollectors.add(new LogCollector(Paths.get(instanceRoot, "logs"), target));
+        if (serverLogs) {
+            activeCollectors.add(new LogCollector(Paths.get(instanceRoot, "serverLogs"), target, accessLogs));
         }
 
         if (jvmReport) {
@@ -396,8 +399,8 @@ public class CollectorService {
             if (domainXml) {
                 activeCollectors.add(new DomainXmlCollector(Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "config", "domain.xml"), server.getName(), finalDirSuffix));
             }
-            if (logs) {
-                activeCollectors.add(new LogCollector(Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "logs"), server.getName(), finalDirSuffix));
+            if (serverLogs) {
+                activeCollectors.add(new LogCollector(Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "serverLogs"), server.getName(), finalDirSuffix, accessLogs));
             }
 
             if (jvmReport) {

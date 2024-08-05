@@ -56,24 +56,28 @@ public class LogCollector extends FileCollector {
 
     private Path logPath;
     private Path accessLogPath;
+    private Boolean collectAccessLog;
     private String dirSuffix;
 
-    public LogCollector(Path logPath) {
+    public LogCollector(Path logPath, Boolean collectAccessLog) {
         this.logPath = logPath;
         this.accessLogPath = logPath.resolve("access");
+        this.collectAccessLog = collectAccessLog;
     }
 
-    public LogCollector(Path logPath, String instanceName) {
+    public LogCollector(Path logPath, String instanceName, Boolean collectAccessLog) {
         this.logPath = logPath;
         this.accessLogPath = logPath.resolve("access");
+        this.collectAccessLog = collectAccessLog;
         super.setInstanceName(instanceName);
     }
 
-    public LogCollector(Path logPath, String instanceName, String dirSuffix) {
+    public LogCollector(Path logPath, String instanceName, String dirSuffix, Boolean collectAccessLog) {
         this.logPath = logPath;
         this.accessLogPath = logPath.resolve("access");
         super.setInstanceName(instanceName);
         this.dirSuffix = dirSuffix;
+        this.collectAccessLog = collectAccessLog;
     }
 
     @Override
@@ -97,7 +101,7 @@ public class LogCollector extends FileCollector {
             }
         }
 
-        if (confirmPath(accessLogPath, false) && confirmPath(outputPath.resolve("access"), true)) {
+        if (collectAccessLog && confirmPath(accessLogPath, false) && confirmPath(outputPath.resolve("access"), true)) {
             try {
                 logger.info("Collecting access logs from " + (getInstanceName() != null ? getInstanceName() : "server"));
                 CopyDirectoryVisitor copyDirectoryVisitor = new CopyDirectoryVisitor(outputPath.resolve("access"), ".txt");
