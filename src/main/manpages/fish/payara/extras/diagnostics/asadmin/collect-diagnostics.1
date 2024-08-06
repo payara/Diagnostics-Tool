@@ -5,11 +5,12 @@ NAME
 
 SYNOPSIS
            collect-diagnostics [--help]
-           [--serverlogs={true|false}]  [--accesslogs={true|false}]
-           [--domainxml={true|false}] [--threaddump={true|false}]
-           [--heapdump={true|false}]  [--jvmreport={true|false}]
-           [--domaindir domaindir]  [--nodedir nodedir]
-           [--dir dir] [--target target-name]
+           [--serverlogs={true|false}]  [--serverlogs={true|false}]
+           [--accesslogs={true|false}]  [--domainxml={true|false}]
+           [--threaddump={true|false}]  [--heapdump={true|false}]
+           [--jvmreport={true|false}]   [--domaindir domaindir]
+           [--nodedir nodedir]          [--dir dir]
+           [--target target-name]
            domainname
 
 DESCRIPTION
@@ -32,6 +33,9 @@ OPTIONS
 
        --serverlogs
             Whether to collect notification and server logs. The default is true.
+
+       --notificationlogs
+                          Whether to collect access logs. The default is true.
 
        --accesslogs
                    Whether to collect access logs. The default is true.

@@ -64,6 +64,9 @@ public class CollectAsadmin extends BaseAsadmin {
     @Param(name = ParamConstants.ACCESS_LOG_PARAM, optional = true, defaultValue = "true")
     private boolean collectAccessLogs;
 
+    @Param(name = ParamConstants.NOTIFICATION_LOG_PARAM, optional = true, defaultValue = "true")
+    private boolean collectNotificationLogs;
+
     @Param(name = ParamConstants.DOMAIN_XML_PARAM, optional = true, defaultValue = "true")
     private boolean collectDomainXml;
 
@@ -126,6 +129,7 @@ public class CollectAsadmin extends BaseAsadmin {
         //Parameter Options
         params.put(ParamConstants.LOGS_PARAM, getOption(ParamConstants.LOGS_PARAM));
         params.put(ParamConstants.ACCESS_LOG_PARAM, getOption(ParamConstants.ACCESS_LOG_PARAM));
+        params.put(ParamConstants.NOTIFICATION_LOG_PARAM, getOption(ParamConstants.NOTIFICATION_LOG_PARAM));
         params.put(ParamConstants.DOMAIN_XML_PARAM, getOption(ParamConstants.DOMAIN_XML_PARAM));
         params.put(ParamConstants.THREAD_DUMP_PARAM, getOption(ParamConstants.THREAD_DUMP_PARAM));
         params.put(ParamConstants.JVM_REPORT_PARAM, getOption(ParamConstants.JVM_REPORT_PARAM));

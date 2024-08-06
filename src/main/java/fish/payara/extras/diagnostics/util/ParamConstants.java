@@ -50,6 +50,7 @@ public final class ParamConstants {
     public static final String TARGET_PARAM = "target";
     public static final String LOGS_PARAM = "serverLogs";
     public static final String ACCESS_LOG_PARAM = "accessLogs";
+    public static final String NOTIFICATION_LOG_PARAM = "notificationLogs";
     public static final String DOMAIN_XML_PARAM = "domainXml";
     public static final String THREAD_DUMP_PARAM = "threadDump";
     public static final String JVM_REPORT_PARAM = "jvmReport";
