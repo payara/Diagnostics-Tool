@@ -56,31 +56,31 @@ public class LogCollector extends FileCollector {
 
     private Path logPath;
     private Path accessLogPath;
+    private String logName;
     private Boolean collectAccessLogs = false;
     private Boolean collectNotificationLogs = false;
     private Boolean collectServerLogs = false;
     private String dirSuffix;
 
-    public LogCollector(Path logPath, Boolean collectAccessLogs, Boolean collectNotificationLogs, Boolean collectServerLogs) {
-        this.collectAccessLogs = collectAccessLogs;
-        this.collectNotificationLogs = collectNotificationLogs;
-        this.collectServerLogs = collectServerLogs;
-        this.accessLogPath = logPath.resolve("access");
+    public LogCollector(Path logPath, String logName) {
         this.logPath = logPath;
+        this.logName = logName;
     }
 
-    public LogCollector(Path logPath, String instanceName) {
+    public LogCollector(Path logPath, String instanceName, String logName) {
         this.logPath = logPath;
-        this.accessLogPath = logPath.resolve("access");
         super.setInstanceName(instanceName);
+        this.logName = logName;
     }
 
-    public LogCollector(Path logPath, String instanceName, String dirSuffix) {
+    public LogCollector(Path logPath, String instanceName, String dirSuffix, String logName) {
         this.logPath = logPath;
-        this.accessLogPath = logPath.resolve("access");
         super.setInstanceName(instanceName);
         this.dirSuffix = dirSuffix;
+        this.logName = logName;
     }
+
+
 
     @Override
     public int collect() {
@@ -88,31 +88,32 @@ public class LogCollector extends FileCollector {
         if (params == null) {
             return 0;
         }
-        String outputPathString = (String) params.get((String) ParamConstants.DIR_PARAM);
+        String outputPathString = (String) params.get(ParamConstants.DIR_PARAM);
         Path outputPath = Paths.get(outputPathString, dirSuffix != null ? dirSuffix : "");
 
-        if (collectServerLogs && confirmPath(logPath, false) && confirmPath(outputPath, true)) {
-            collectLogs(logPath, outputPath.resolve("log"), "server.log");
-        }
-        if (collectAccessLogs && confirmPath(accessLogPath, false) && confirmPath(outputPath.resolve("access"), true)) {
-            collectLogs(accessLogPath, outputPath.resolve("access"), "access_log");
-
-        }
-        if (collectNotificationLogs && confirmPath(logPath, false) && confirmPath(outputPath, true)) {
-            collectLogs(logPath, outputPath.resolve("log"), "notification.log");
+        if (confirmPath(logPath, false) && confirmPath(outputPath, true)) {
+            collectLogs(logPath, outputPath.resolve("logs"), logName);
         }
 
         return 0;
     }
 
     private void collectLogs(Path sourcePath, Path destinationPath, String fileContains) {
+        if (Files.exists(sourcePath)) {
+            collectExistingLogs(sourcePath, destinationPath,fileContains);
+        } else {
+            logger.log(LogLevel.SEVERE, "Could not find directory {0}", new Object[]{sourcePath});
+        }
+    }
+
+    private void collectExistingLogs(Path sourcePath, Path destinationPath, String fileContains) {
         try {
-            logger.info("Collecting logs from " + (getInstanceName() != null ? getInstanceName() : "server"));
+            logger.info(String.format("Collecting %s from %s", logName, (getInstanceName() != null ? getInstanceName() : "server")));
             CopyDirectoryVisitor copyDirectoryVisitor = new CopyDirectoryVisitor(destinationPath, fileContains);
             copyDirectoryVisitor.setInstanceName(getInstanceName());
             Files.walkFileTree(sourcePath, copyDirectoryVisitor);
         } catch (IOException io) {
-            logger.log(LogLevel.SEVERE, "Could not copy directory " + sourcePath.toString() + " to path " + destinationPath.toString());
+            logger.log(LogLevel.SEVERE, "Could not copy directory " + sourcePath + " to path " + destinationPath.toString());
             io.printStackTrace();
         }
     }
