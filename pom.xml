@@ -73,6 +73,11 @@
 
     <repositories>
         <repository>
+            <id>payara-nexus-enterprise-artifacts</id>
+            <name>Payara Enterprise Private Artifacts</name>
+            <url>https://nexus.dev.payara.fish/repository/payara-enterprise-artifacts-private/</url>
+        </repository>
+        <repository>
             <id>payara-nexus-artifacts</id>
             <name>Payara Public Artifacts</name>
             <url>https://nexus.dev.payara.fish/repository/payara-artifacts/</url>
@@ -80,6 +85,11 @@
     </repositories>
 
     <pluginRepositories>
+        <pluginRepository>
+            <id>payara-nexus-enterprise-artifacts</id>
+            <name>Payara Enterprise Private Artifacts</name>
+            <url>https://nexus.dev.payara.fish/repository/payara-enterprise-artifacts-private/</url>
+        </pluginRepository>
         <pluginRepository>
             <id>payara-nexus-artifacts</id>
             <name>Payara Public Artifacts</name>
