@@ -48,7 +48,7 @@ public final class ParamConstants {
     //Collect Params
     public static final String DOMAIN_NAME_PARAM = "domainName";
     public static final String TARGET_PARAM = "target";
-    public static final String LOGS_PARAM = "serverLog";
+    public static final String SERVER_LOG_PARAM = "serverLog";
     public static final String ACCESS_LOG_PARAM = "accessLog";
     public static final String NOTIFICATION_LOG_PARAM = "notificationLog";
     public static final String DOMAIN_XML_PARAM = "domainXml";
