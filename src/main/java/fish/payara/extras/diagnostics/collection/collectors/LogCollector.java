@@ -55,11 +55,7 @@ import java.util.Map;
 public class LogCollector extends FileCollector {
 
     private Path logPath;
-    private Path accessLogPath;
     private String logName;
-    private Boolean collectAccessLogs = false;
-    private Boolean collectNotificationLogs = false;
-    private Boolean collectServerLogs = false;
     private String dirSuffix;
 
     public LogCollector(Path logPath, String logName) {
@@ -98,12 +94,14 @@ public class LogCollector extends FileCollector {
         return 0;
     }
 
-    private void collectLogs(Path sourcePath, Path destinationPath, String fileContains) {
+    private int collectLogs(Path sourcePath, Path destinationPath, String fileContains) {
         if (Files.exists(sourcePath)) {
             collectExistingLogs(sourcePath, destinationPath,fileContains);
         } else {
             logger.log(LogLevel.SEVERE, "Could not find directory {0}", new Object[]{sourcePath});
+            return 1;
         }
+        return 0;
     }
 
     private void collectExistingLogs(Path sourcePath, Path destinationPath, String fileContains) {
@@ -134,9 +132,11 @@ public class LogCollector extends FileCollector {
         public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
             if (path == null) {
                 this.path = dir;
-            } else {
-                Files.createDirectories(destination.resolve(destination));
             }
+
+            Path relativeDir = path.relativize(dir);
+            Path destinationDir = destination.resolve(relativeDir);
+            Files.createDirectories(destinationDir);
 
             return FileVisitResult.CONTINUE;
         }
