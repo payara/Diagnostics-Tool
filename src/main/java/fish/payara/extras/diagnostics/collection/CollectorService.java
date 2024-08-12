@@ -122,7 +122,7 @@ public class CollectorService {
 
         if (parameterMap != null) {
             domainXml = parameterMap.get(DOMAIN_XML_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(DOMAIN_XML_PARAM));
-            serverLog = parameterMap.get(LOGS_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(LOGS_PARAM));
+            serverLog = parameterMap.get(SERVER_LOG_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(SERVER_LOG_PARAM));
             accessLog = parameterMap.get(ACCESS_LOG_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(ACCESS_LOG_PARAM));
             notificationLog = parameterMap.get(NOTIFICATION_LOG_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(NOTIFICATION_LOG_PARAM));
             threadDump = parameterMap.get(THREAD_DUMP_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(THREAD_DUMP_PARAM));
