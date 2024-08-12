@@ -87,9 +87,9 @@ public class CollectorService {
     private final Environment environment;
     private final ProgramOptions programOptions;
     private Boolean domainXml;
-    private Boolean accessLogs;
-    private Boolean notificationLogs;
-    private Boolean serverLogs;
+    private Boolean accessLog;
+    private Boolean notificationLog;
+    private Boolean serverLog;
     private Boolean threadDump;
     private Boolean jvmReport;
     private Boolean heapDump;
@@ -113,18 +113,18 @@ public class CollectorService {
 
     private void init() {
         domainXml = true;
-        serverLogs = true;
-        accessLogs = true;
-        notificationLogs = true;
+        serverLog = true;
+        accessLog = true;
+        notificationLog = true;
         threadDump = true;
         jvmReport = true;
         heapDump = true;
 
         if (parameterMap != null) {
             domainXml = parameterMap.get(DOMAIN_XML_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(DOMAIN_XML_PARAM));
-            serverLogs = parameterMap.get(LOGS_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(LOGS_PARAM));
-            accessLogs = parameterMap.get(ACCESS_LOG_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(ACCESS_LOG_PARAM));
-            notificationLogs = parameterMap.get(NOTIFICATION_LOG_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(NOTIFICATION_LOG_PARAM));
+            serverLog = parameterMap.get(LOGS_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(LOGS_PARAM));
+            accessLog = parameterMap.get(ACCESS_LOG_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(ACCESS_LOG_PARAM));
+            notificationLog = parameterMap.get(NOTIFICATION_LOG_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(NOTIFICATION_LOG_PARAM));
             threadDump = parameterMap.get(THREAD_DUMP_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(THREAD_DUMP_PARAM));
             jvmReport = parameterMap.get(JVM_REPORT_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(JVM_REPORT_PARAM));
             heapDump = parameterMap.get(HEAP_DUMP_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(HEAP_DUMP_PARAM));
@@ -321,17 +321,17 @@ public class CollectorService {
                 activeCollectors.add(new DomainXmlCollector(domainXmlPath));
             }
 
-            if (serverLogs) {
+            if (serverLog) {
                 Path serverLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
                 activeCollectors.add(new LogCollector(serverLogPath, "server.log"));
             }
 
-            if (accessLogs) {
+            if (accessLog) {
                 Path accessLogPath = Paths.get((String) parameterMap.get(LOGS_PATH), "access");
                 activeCollectors.add(new LogCollector(accessLogPath, "access_log"));
             }
 
-            if (notificationLogs) {
+            if (notificationLog) {
                 Path notificationLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
                 activeCollectors.add(new LogCollector(notificationLogPath, "notification.log"));
             }
@@ -392,15 +392,15 @@ public class CollectorService {
         }
 
         Path logsPath = Paths.get(instanceRoot, "logs");
-        if (serverLogs) {
+        if (serverLog) {
             activeCollectors.add(new LogCollector(logsPath, target, "server.log"));
         }
 
-        if (accessLogs) {
+        if (accessLog) {
             activeCollectors.add(new LogCollector(Paths.get(logsPath.toString(), "access"), target, "access_log"));
         }
 
-        if (notificationLogs) {
+        if (notificationLog) {
             activeCollectors.add(new LogCollector(logsPath, target, "notification.log"));
         }
 
@@ -426,15 +426,15 @@ public class CollectorService {
 
             Path logPath = Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "logs");
 
-            if (serverLogs) {
+            if (serverLog) {
                 activeCollectors.add(new LogCollector(logPath, server.getName(), finalDirSuffix, "server.log"));
             }
 
-            if (accessLogs) {
+            if (accessLog) {
                 activeCollectors.add(new LogCollector(Paths.get(logPath.toString(), "access"), server.getName(), finalDirSuffix, "access_log"));
             }
 
-            if (notificationLogs) {
+            if (notificationLog) {
                 activeCollectors.add(new LogCollector(logPath, server.getName(), finalDirSuffix, "notification.log"));
             }
 

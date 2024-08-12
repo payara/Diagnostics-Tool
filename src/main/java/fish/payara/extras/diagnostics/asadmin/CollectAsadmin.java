@@ -59,13 +59,13 @@ import java.util.Map;
 public class CollectAsadmin extends BaseAsadmin {
 
     @Param(name = ParamConstants.LOGS_PARAM, optional = true, defaultValue = "true")
-    private boolean collectLogs;
+    private boolean collectServerLog;
 
     @Param(name = ParamConstants.ACCESS_LOG_PARAM, optional = true, defaultValue = "true")
-    private boolean collectAccessLogs;
+    private boolean collectAccessLog;
 
     @Param(name = ParamConstants.NOTIFICATION_LOG_PARAM, optional = true, defaultValue = "true")
-    private boolean collectNotificationLogs;
+    private boolean collectNotificationLog;
 
     @Param(name = ParamConstants.DOMAIN_XML_PARAM, optional = true, defaultValue = "true")
     private boolean collectDomainXml;
