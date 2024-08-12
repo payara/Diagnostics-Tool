@@ -5,10 +5,12 @@ NAME
 
 SYNOPSIS
            collect-diagnostics [--help]
-           [--serverlog={true|false}] [--domainxml={true|false}]
-           [--threaddump={true|false}] [--heapdump={true|false}]
-           [--jvmreport={true|false}] [--domaindir domaindir]
-           [--nodedir nodedir] [--dir dir] [--target target-name]
+           [--serverlog={true|false}]  [--notificationlog={true|false}]
+           [--accesslog={true|false}]  [--domainxml={true|false}]
+           [--threaddump={true|false}]  [--heapdump={true|false}]
+           [--jvmreport={true|false}]   [--domaindir domaindir]
+           [--nodedir nodedir]          [--dir dir]
+           [--target target-name]
            domainname
 
 DESCRIPTION
@@ -30,7 +32,13 @@ OPTIONS
            Displays the help text for the subcommand.
 
        --serverlog
-            Whether to collect server logs. The default is true.
+           Whether to collect server log. The default is true.
+
+       --notificationlog
+           Whether to collect notification log. The default is true.
+
+       --accesslog
+           Whether to collect access log. The default is true.
 
        --domainxml
            Whether to collect the domain.xml. The default is true.
