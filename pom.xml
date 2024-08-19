@@ -65,18 +65,13 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <payara.version>6.13.0</payara.version>
-        <payara.core.version>6.6.0</payara.core.version>
+        <payara.core.version>6.7.0</payara.core.version>
 
         <javadoc.skip>true</javadoc.skip>
         <source.skip>true</source.skip>
     </properties>
 
     <repositories>
-        <repository>
-            <id>payara-nexus-enterprise-artifacts</id>
-            <name>Payara Enterprise Private Artifacts</name>
-            <url>https://nexus.dev.payara.fish/repository/payara-enterprise-artifacts-private/</url>
-        </repository>
         <repository>
             <id>payara-nexus-artifacts</id>
             <name>Payara Public Artifacts</name>
@@ -85,11 +80,6 @@
     </repositories>
 
     <pluginRepositories>
-        <pluginRepository>
-            <id>payara-nexus-enterprise-artifacts</id>
-            <name>Payara Enterprise Private Artifacts</name>
-            <url>https://nexus.dev.payara.fish/repository/payara-enterprise-artifacts-private/</url>
-        </pluginRepository>
         <pluginRepository>
             <id>payara-nexus-artifacts</id>
             <name>Payara Public Artifacts</name>
