@@ -149,10 +149,16 @@ public class DomainXmlCollector extends FileCollector {
             Element tempNode = (Element) node;
             boolean hasPasswordAttribute = tempNode.hasAttribute("password");
             if (hasPasswordAttribute) {
-                //FIXME Just a test logger remove this when done!
-                LOGGER.info("FIX ME --- Password changed from: " + tempNode.getAttribute("password") + " GET RID OF THIS LOG AFTER TESTING!!!") ;
                 tempNode.setAttribute("password", PASSWORD_CHANGE);
             }
+            String nameAttribute = tempNode.getAttribute("name");
+            boolean hasValueAttribute = tempNode.hasAttribute("value");
+            if ("Password".equalsIgnoreCase(nameAttribute)) {
+                if (hasValueAttribute) {
+                    tempNode.setAttribute("value", PASSWORD_CHANGE);
+                }
+            }
+
             NodeList childNodes = node.getChildNodes();
             for (int i = 0; i < childNodes.getLength(); i++) {
                 traverseNodes(childNodes.item(i));
