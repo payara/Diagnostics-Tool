@@ -65,18 +65,22 @@ public class DomainXmlCollector extends FileCollector {
     private Path path;
     private String dirSuffix;
     private Logger LOGGER = Logger.getLogger(DomainXmlCollector.class.getName());
+    private boolean obfuscateDomainXml;
     private final String PASSWORD_CHANGE = "PASSWORD_HIDDEN";
     private final String PASSWORD_KEYWORD = "password";
     private final int COLLECTED_OKAY = 0;
 
-    public DomainXmlCollector(Path path) {
+
+    public DomainXmlCollector(Path path, boolean obfuscateDomainXml) {
         this.path = path;
+        this.obfuscateDomainXml = obfuscateDomainXml;
     }
 
-    public DomainXmlCollector(Path path, String instanceName, String dirSuffix) {
+    public DomainXmlCollector(Path path, String instanceName, String dirSuffix, boolean obfuscateDomainXml) {
         this.path = path;
         super.setInstanceName(instanceName);
         this.dirSuffix = dirSuffix;
+        this.obfuscateDomainXml = obfuscateDomainXml;
     }
 
 
@@ -91,7 +95,7 @@ public class DomainXmlCollector extends FileCollector {
                 setDestination(Paths.get(outputPath.toString(), dirSuffix != null ? dirSuffix : ""));
                 LOGGER.info("Collecting domain.xml from " + (getInstanceName() != null ? getInstanceName() : "server"));
                 domainXmlCollected = super.collect();
-                if (domainXmlCollected == COLLECTED_OKAY) {
+                if (domainXmlCollected == COLLECTED_OKAY && obfuscateDomainXml) {
                     modifyXMLFile(resolveDestinationFile().toFile());
                 }
             }
@@ -142,13 +146,13 @@ public class DomainXmlCollector extends FileCollector {
 
         if (node.getNodeType() == Node.ELEMENT_NODE) {
             Element tempNode = (Element) node;
-            boolean hasPasswordAttribute = tempNode.hasAttribute("password");
+            boolean hasPasswordAttribute = tempNode.hasAttribute(PASSWORD_KEYWORD);
             if (hasPasswordAttribute) {
-                tempNode.setAttribute("password", PASSWORD_CHANGE);
+                tempNode.setAttribute(PASSWORD_KEYWORD, PASSWORD_CHANGE);
             }
             String nameAttribute = tempNode.getAttribute("name");
             boolean hasValueAttribute = tempNode.hasAttribute("value");
-            if ("Password".equalsIgnoreCase(nameAttribute)) {
+            if (PASSWORD_KEYWORD.equalsIgnoreCase(nameAttribute)) {
                 if (hasValueAttribute) {
                     tempNode.setAttribute("value", PASSWORD_CHANGE);
                 }
