@@ -41,17 +41,38 @@
 package fish.payara.extras.diagnostics.collection.collectors;
 
 import fish.payara.extras.diagnostics.util.ParamConstants;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+/**
+ * FIXME
+ *
+ */
 public class DomainXmlCollector extends FileCollector {
 
     private Path path;
     private String dirSuffix;
     private Logger LOGGER = Logger.getLogger(DomainXmlCollector.class.getName());
+    private final String PASSWORD_CHANGE = "PASSWORD_HIDDEN";
+    private final String PASSWORD_KEYWORD = "password";
+    private final int COLLECTED_OKAY = 0;
 
     public DomainXmlCollector(Path path) {
         this.path = path;
@@ -66,6 +87,7 @@ public class DomainXmlCollector extends FileCollector {
 
     @Override
     public int collect() {
+        int domainXmlCollected = COLLECTED_OKAY;
         Map<String, Object> params = getParams();
         if (params != null) {
             Path outputPath = getPathFromParams(ParamConstants.DIR_PARAM, params);
@@ -73,11 +95,13 @@ public class DomainXmlCollector extends FileCollector {
                 setFilePath(path);
                 setDestination(Paths.get(outputPath.toString(), dirSuffix != null ? dirSuffix : ""));
                 LOGGER.info("Collecting domain.xml from " + (getInstanceName() != null ? getInstanceName() : "server"));
-                return super.collect();
+                domainXmlCollected = super.collect();
+                if (domainXmlCollected == COLLECTED_OKAY) {
+                    modifyXMLFile(resolveDestinationFile().toFile());
+                }
             }
         }
-
-        return 0;
+        return domainXmlCollected;
     }
 
     private Path getPathFromParams(String key, Map<String, Object> parameterMap) {
@@ -88,8 +112,52 @@ public class DomainXmlCollector extends FileCollector {
                 return Paths.get(valueString);
             }
         }
-
         return null;
+    }
+
+    private void modifyXMLFile(File xmlFile) {
+        LOGGER.info("Modifying " + xmlFile.getAbsolutePath());
+        modifyXMLPassword(xmlFile);
+    }
+
+    private void modifyXMLPassword(File xmlFile) {
+        try {
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+            Document doc = dBuilder.parse(xmlFile);
+            doc.getDocumentElement().normalize();
+            traverseNodes(doc.getDocumentElement());
+
+
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+            transformer.setOutputProperty(OutputKeys.INDENT,"yes");
+            DOMSource source = new DOMSource(doc);
+            StreamResult result = new StreamResult(xmlFile);
+            transformer.transform(source, result);
+
+            LOGGER.info("Successfully modified " + xmlFile.getAbsolutePath());
+        } catch (Exception e) {
+            LOGGER.severe("Error Modifying XML : " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void traverseNodes(Node node) {
+
+        if (node.getNodeType() == Node.ELEMENT_NODE) {
+            Element tempNode = (Element) node;
+            boolean hasPasswordAttribute = tempNode.hasAttribute("password");
+            if (hasPasswordAttribute) {
+                //FIXME Just a test logger remove this when done!
+                LOGGER.info("FIX ME --- Password changed from: " + tempNode.getAttribute("password") + " GET RID OF THIS LOG AFTER TESTING!!!") ;
+                tempNode.setAttribute("password", PASSWORD_CHANGE);
+            }
+            NodeList childNodes = node.getChildNodes();
+            for (int i = 0; i < childNodes.getLength(); i++) {
+                traverseNodes(childNodes.item(i));
+            }
+        }
     }
 
 
