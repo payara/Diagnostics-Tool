@@ -55,22 +55,28 @@ import java.util.Map;
 public class LogCollector extends FileCollector {
 
     private Path logPath;
+    private String logName;
     private String dirSuffix;
 
-    public LogCollector(Path logPath) {
+    public LogCollector(Path logPath, String logName) {
         this.logPath = logPath;
+        this.logName = logName;
     }
 
-    public LogCollector(Path logPath, String instanceName) {
+    public LogCollector(Path logPath, String instanceName, String logName) {
         this.logPath = logPath;
         super.setInstanceName(instanceName);
+        this.logName = logName;
     }
 
-    public LogCollector(Path logPath, String instanceName, String dirSuffix) {
+    public LogCollector(Path logPath, String instanceName, String dirSuffix, String logName) {
         this.logPath = logPath;
         super.setInstanceName(instanceName);
         this.dirSuffix = dirSuffix;
+        this.logName = logName;
     }
+
+
 
     @Override
     public int collect() {
@@ -78,41 +84,59 @@ public class LogCollector extends FileCollector {
         if (params == null) {
             return 0;
         }
-        String outputPathString = (String) params.get((String) ParamConstants.DIR_PARAM);
+        String outputPathString = (String) params.get(ParamConstants.DIR_PARAM);
         Path outputPath = Paths.get(outputPathString, dirSuffix != null ? dirSuffix : "");
+
         if (confirmPath(logPath, false) && confirmPath(outputPath, true)) {
-            try {
-                logger.info("Collecting logs from " + (getInstanceName() != null ? getInstanceName() : "server"));
-                CopyDirectoryVisitor copyDirectoryVisitor = new CopyDirectoryVisitor(outputPath);
-                copyDirectoryVisitor.setInstanceName(getInstanceName());
-                Files.walkFileTree(logPath, copyDirectoryVisitor);
-            } catch (IOException io) {
-                logger.log(LogLevel.SEVERE, "Could not copy directory " + logPath.toString() + " to path " + outputPathString);
-                io.printStackTrace();
-                return 1;
-            }
+            collectLogs(logPath, outputPath.resolve("logs"), logName);
+        }
+
+        return 0;
+    }
+
+    private int collectLogs(Path sourcePath, Path destinationPath, String fileContains) {
+        if (Files.exists(sourcePath)) {
+            collectExistingLogs(sourcePath, destinationPath,fileContains);
+        } else {
+            logger.log(LogLevel.SEVERE, "Could not find directory {0}", new Object[]{sourcePath});
+            return 1;
         }
         return 0;
+    }
+
+    private void collectExistingLogs(Path sourcePath, Path destinationPath, String fileContains) {
+        try {
+            logger.info(String.format("Collecting %s from %s", logName, (getInstanceName() != null ? getInstanceName() : "server")));
+            CopyDirectoryVisitor copyDirectoryVisitor = new CopyDirectoryVisitor(destinationPath, fileContains);
+            copyDirectoryVisitor.setInstanceName(getInstanceName());
+            Files.walkFileTree(sourcePath, copyDirectoryVisitor);
+        } catch (IOException io) {
+            logger.log(LogLevel.SEVERE, "Could not copy directory " + sourcePath + " to path " + destinationPath.toString());
+            io.printStackTrace();
+        }
     }
 
     private class CopyDirectoryVisitor extends SimpleFileVisitor<Path> {
 
         private final Path destination;
         private Path path = null;
-
+        private final String fileContains;
         private String instanceName;
 
-        public CopyDirectoryVisitor(Path destination) {
+        public CopyDirectoryVisitor(Path destination, String fileContains) {
             this.destination = destination;
+            this.fileContains = fileContains;
         }
 
         @Override
         public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
             if (path == null) {
                 this.path = dir;
-            } else {
-                Files.createDirectories(destination.resolve(destination));
             }
+
+            Path relativeDir = path.relativize(dir);
+            Path destinationDir = destination.resolve(relativeDir);
+            Files.createDirectories(destinationDir);
 
             return FileVisitResult.CONTINUE;
         }
@@ -121,7 +145,7 @@ public class LogCollector extends FileCollector {
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
 
             Path relativePath = path.relativize(file);
-            if (!file.getFileName().toString().contains(".log")) {
+            if (!file.getFileName().toString().contains(fileContains)) {
                 return FileVisitResult.CONTINUE;
             }
 
