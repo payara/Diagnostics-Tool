@@ -83,7 +83,7 @@ public abstract class FileCollector implements Collector {
         try {
             if (confirmPath(filePath, false) && confirmPath(destination, true)) {
                 Path targetFile = resolveDestinationFile();
-                Files.copy(filePath,targetFile, REPLACE_EXISTING);
+                Files.copy(filePath, targetFile, REPLACE_EXISTING);
             }
         } catch (IOException ie) {
             logger.log(LogLevel.SEVERE, "Could not copy path from " + filePath + " to " + destination);
