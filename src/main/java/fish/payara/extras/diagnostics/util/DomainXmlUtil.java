@@ -54,13 +54,14 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DomainXmlUtil {
     private static final Logger LOGGER = Logger.getLogger(DomainXmlUtil.class.getName());
     private static final String PASSWORD_CHANGE = "PASSWORD_HIDDEN";
     private static final String PASSWORD_KEYWORD = "password";
     private static final String ADMIN_PASSWORD_KEYWORD = "admin-password";
-    private static final String SEARCH_BIND_KEYWORD = "search-bind-password";
     private static final String NAME_KEYWORD = "name";
     private static final String VALUE_KEYWORD = "value";
 
@@ -103,7 +104,7 @@ public class DomainXmlUtil {
 
             String nameAttribute = tempNode.getAttribute(NAME_KEYWORD);
             boolean hasValueAttribute = tempNode.hasAttribute(VALUE_KEYWORD);
-            if (PASSWORD_KEYWORD.equalsIgnoreCase(nameAttribute) || SEARCH_BIND_KEYWORD.equalsIgnoreCase(nameAttribute)) {
+            if (nameAttribute.toLowerCase().contains(PASSWORD_KEYWORD)) {
                 if (hasValueAttribute) {
                     tempNode.setAttribute(VALUE_KEYWORD, PASSWORD_CHANGE);
                 }
