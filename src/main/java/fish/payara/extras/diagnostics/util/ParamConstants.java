@@ -65,8 +65,8 @@ public final class ParamConstants {
     //Option Params
     public static final String DOMAIN_NAME = "DomainName";
     public static final String DOMAIN_XML_FILE_PATH = "DomainXMLFilePath";
+    public static final String OBFUSCATE_DOMAIN_XML_PARAM = "obfuscate";
     public static final String LOGS_PATH = "LogPath";
-    public static final String OBFUSCATE_DOMAIN_XML_PARAM = "obfuscateDomainXml";
 
     public static final String NEXUS = "nexus";
     public static final String ZENDESK = "zendesk";

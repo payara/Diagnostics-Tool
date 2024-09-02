@@ -1,7 +1,7 @@
 /*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  *
- * Copyright (c) 2023-2024 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -59,6 +59,8 @@ public class DomainXmlUtil {
     private static final Logger LOGGER = Logger.getLogger(DomainXmlUtil.class.getName());
     private static final String PASSWORD_CHANGE = "PASSWORD_HIDDEN";
     private static final String PASSWORD_KEYWORD = "password";
+    private static final String ADMIN_PASSWORD_KEYWORD = "admin-password";
+    private static final String SEARCH_BIND_KEYWORD = "search-bind-password";
     private static final String NAME_KEYWORD = "name";
     private static final String VALUE_KEYWORD = "value";
 
@@ -91,13 +93,17 @@ public class DomainXmlUtil {
         if (node.getNodeType() == Node.ELEMENT_NODE) {
             Element tempNode = (Element) node;
             boolean hasPasswordAttribute = tempNode.hasAttribute(PASSWORD_KEYWORD);
+            boolean hasAdminPasswordAttribute = tempNode.hasAttribute(ADMIN_PASSWORD_KEYWORD);
             if (hasPasswordAttribute) {
                 tempNode.setAttribute(PASSWORD_KEYWORD, PASSWORD_CHANGE);
+            }
+            if (hasAdminPasswordAttribute) {
+                tempNode.setAttribute(ADMIN_PASSWORD_KEYWORD, PASSWORD_CHANGE);
             }
 
             String nameAttribute = tempNode.getAttribute(NAME_KEYWORD);
             boolean hasValueAttribute = tempNode.hasAttribute(VALUE_KEYWORD);
-            if (PASSWORD_KEYWORD.equalsIgnoreCase(nameAttribute)) {
+            if (PASSWORD_KEYWORD.equalsIgnoreCase(nameAttribute) || SEARCH_BIND_KEYWORD.equalsIgnoreCase(nameAttribute)) {
                 if (hasValueAttribute) {
                     tempNode.setAttribute(VALUE_KEYWORD, PASSWORD_CHANGE);
                 }
