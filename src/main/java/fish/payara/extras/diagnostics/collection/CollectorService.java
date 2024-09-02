@@ -124,7 +124,7 @@ public class CollectorService {
 
         if (parameterMap != null) {
             domainXml = parameterMap.get(DOMAIN_XML_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(DOMAIN_XML_PARAM));
-            obfuscateDomainXml = parameterMap.get(OBFUSCATE_DOMAIN_XML_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(OBFUSCATE_DOMAIN_XML_PARAM));
+            obfuscateDomainXml = parameterMap.get(OBFUSCATE_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(OBFUSCATE_PARAM));
             serverLog = parameterMap.get(SERVER_LOG_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(SERVER_LOG_PARAM));
             accessLog = parameterMap.get(ACCESS_LOG_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(ACCESS_LOG_PARAM));
             notificationLog = parameterMap.get(NOTIFICATION_LOG_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(NOTIFICATION_LOG_PARAM));

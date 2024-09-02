@@ -64,7 +64,7 @@ public class DomainXmlUtil {
     private static final String NAME_KEYWORD = "name";
     private static final String VALUE_KEYWORD = "value";
 
-    public void obfuscateDomainXml(File xmlFile) {
+    public void obfuscateDomainXml (File xmlFile) {
         try {
             LOGGER.info("Obfuscating " + xmlFile.getAbsolutePath());
 

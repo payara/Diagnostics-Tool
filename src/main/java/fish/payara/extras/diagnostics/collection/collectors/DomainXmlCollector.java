@@ -55,7 +55,7 @@ public class DomainXmlCollector extends FileCollector {
     private Logger LOGGER = Logger.getLogger(DomainXmlCollector.class.getName());
     private boolean obfuscateDomainXml;
     private final int COLLECTED_OKAY = 0;
-    private final DomainXmlUtil obfuscate = new DomainXmlUtil();
+    private final DomainXmlUtil domainXmlUtil = new DomainXmlUtil();
 
     public DomainXmlCollector(Path path, boolean obfuscateDomainXml) {
         this.path = path;
@@ -81,7 +81,7 @@ public class DomainXmlCollector extends FileCollector {
                 LOGGER.info("Collecting domain.xml from " + (getInstanceName() != null ? getInstanceName() : "server"));
                 domainXmlCollected = super.collect();
                 if (domainXmlCollected == COLLECTED_OKAY && obfuscateDomainXml) {
-                    obfuscate.obfuscateDomainXml(resolveDestinationFile().toFile());
+                    domainXmlUtil.obfuscateDomainXml(resolveDestinationFile().toFile());
                 }
             }
         }
