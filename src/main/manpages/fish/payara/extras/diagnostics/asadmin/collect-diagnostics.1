@@ -10,7 +10,7 @@ SYNOPSIS
            [--threaddump={true|false}]  [--heapdump={true|false}]
            [--jvmreport={true|false}]   [--domaindir domaindir]
            [--nodedir nodedir]          [--dir dir]
-           [--target target-name]
+           [--target target-name]       [--obfuscate={true|false}]
            domainname
 
 DESCRIPTION
@@ -42,6 +42,9 @@ OPTIONS
 
        --domainxml
            Whether to collect the domain.xml. The default is true.
+
+       --obfuscate
+           Whether to obfuscate data in domain.xml. The default is true
 
        --threaddump
            Whether to collect a thread dump. The default is true.
