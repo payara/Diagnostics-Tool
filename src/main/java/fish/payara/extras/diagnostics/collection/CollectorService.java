@@ -87,6 +87,7 @@ public class CollectorService {
     private final Environment environment;
     private final ProgramOptions programOptions;
     private Boolean domainXml;
+    private Boolean obfuscateDomainXml;
     private Boolean accessLog;
     private Boolean notificationLog;
     private Boolean serverLog;
@@ -113,6 +114,7 @@ public class CollectorService {
 
     private void init() {
         domainXml = true;
+        obfuscateDomainXml = true;
         serverLog = true;
         accessLog = true;
         notificationLog = true;
@@ -122,6 +124,7 @@ public class CollectorService {
 
         if (parameterMap != null) {
             domainXml = parameterMap.get(DOMAIN_XML_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(DOMAIN_XML_PARAM));
+            obfuscateDomainXml = parameterMap.get(OBFUSCATE_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(OBFUSCATE_PARAM));
             serverLog = parameterMap.get(SERVER_LOG_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(SERVER_LOG_PARAM));
             accessLog = parameterMap.get(ACCESS_LOG_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(ACCESS_LOG_PARAM));
             notificationLog = parameterMap.get(NOTIFICATION_LOG_PARAM) == null || Boolean.parseBoolean((String) parameterMap.get(NOTIFICATION_LOG_PARAM));
@@ -318,7 +321,7 @@ public class CollectorService {
 
             if (domainXml) {
                 Path domainXmlPath = Paths.get((String) parameterMap.get(DOMAIN_XML_FILE_PATH));
-                activeCollectors.add(new DomainXmlCollector(domainXmlPath));
+                activeCollectors.add(new DomainXmlCollector(domainXmlPath, obfuscateDomainXml));
             }
 
             if (serverLog) {
@@ -388,7 +391,7 @@ public class CollectorService {
     private List<Collector> getLocalCollectors(String instanceRoot) {
         List<Collector> activeCollectors = new ArrayList<>();
         if (domainXml) {
-            activeCollectors.add(new DomainXmlCollector(Paths.get(instanceRoot, "config", "domain.xml"), target, null));
+            activeCollectors.add(new DomainXmlCollector(Paths.get(instanceRoot, "config", "domain.xml"), target, null, obfuscateDomainXml));
         }
 
         Path logsPath = Paths.get(instanceRoot, "logs");
@@ -421,7 +424,7 @@ public class CollectorService {
         for (Server server : serversList) {
             String finalDirSuffix = Paths.get(dirSuffix, server.getName()).toString();
             if (domainXml) {
-                activeCollectors.add(new DomainXmlCollector(Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "config", "domain.xml"), server.getName(), finalDirSuffix));
+                activeCollectors.add(new DomainXmlCollector(Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "config", "domain.xml"), server.getName(), finalDirSuffix, obfuscateDomainXml));
             }
 
             Path logPath = Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "logs");
