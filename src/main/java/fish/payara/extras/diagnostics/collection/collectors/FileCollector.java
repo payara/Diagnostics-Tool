@@ -82,19 +82,23 @@ public abstract class FileCollector implements Collector {
     public int collect() {
         try {
             if (confirmPath(filePath, false) && confirmPath(destination, true)) {
-                if (instanceName != null) {
-                    Files.copy(filePath, destination.resolve((instanceName + "-" + filePath.getFileName())), REPLACE_EXISTING);
-                } else {
-                    Files.copy(filePath, destination.resolve(filePath.getFileName()), REPLACE_EXISTING);
-                }
+                Path targetFile = resolveDestinationFile();
+                Files.copy(filePath, targetFile, REPLACE_EXISTING);
             }
         } catch (IOException ie) {
             logger.log(LogLevel.SEVERE, "Could not copy path from " + filePath + " to " + destination);
             ie.printStackTrace();
             return 1;
         }
-
         return 0;
+    }
+
+    protected Path resolveDestinationFile() {
+        if (instanceName != null) {
+           return destination.resolve((instanceName + "-" + filePath.getFileName()));
+        } else {
+            return destination.resolve(filePath.getFileName());
+        }
     }
 
     protected boolean confirmPath(Path path, boolean createIfNonExistant) {
