@@ -53,15 +53,24 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class DomainXmlUtil {
     private static final Logger LOGGER = Logger.getLogger(DomainXmlUtil.class.getName());
     private static final String PASSWORD_CHANGE = "PASSWORD_HIDDEN";
+    private static final String OBFUSCATED_CHANGE = "OBFUSCATED";
+    private static final String DEFAULT_ADDRESS = "0.0.0.0";
+    private static final String ADDRESS_KEYWORD = "address";
+    private static final String DEFAULT_HOST = "localhost";
+    private static final String HOST_KEYWORD = "host";
     private static final String PASSWORD_KEYWORD = "password";
     private static final String ADMIN_PASSWORD_KEYWORD = "admin-password";
     private static final String NAME_KEYWORD = "name";
     private static final String VALUE_KEYWORD = "value";
+    private static final String URL_KEYWORD = "URL";
+
+    int obfuscatedItem = 1;
 
     public void obfuscateDomainXml (File xmlFile) {
         try {
@@ -83,8 +92,7 @@ public class DomainXmlUtil {
 
             LOGGER.info("Successfully obfuscated " + xmlFile.getAbsolutePath());
         } catch (Exception e) {
-            LOGGER.severe("Error obfuscating XML: " + e.getMessage());
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error obfuscating XML: " + e.getMessage(), e);
         }
     }
 
@@ -107,11 +115,47 @@ public class DomainXmlUtil {
                     tempNode.setAttribute(VALUE_KEYWORD, PASSWORD_CHANGE);
                 }
             }
-
+            if (URL_KEYWORD.equalsIgnoreCase(nameAttribute)) {
+                String obfuscatedUrl = "";
+                String urlAttribute = tempNode.getAttribute(VALUE_KEYWORD);
+                if (urlAttribute.startsWith("jdbc:")) {
+                    //Keep database type e.g. jdbc:h2:xxx
+                    String[] splitUrl = urlAttribute.split(":", 3);
+                    obfuscatedUrl = splitUrl[0] + ":";
+                    if (splitUrl.length == 3){
+                        obfuscatedUrl+= splitUrl[1] + ":";
+                    }
+                }
+                obfuscatedUrl += "database-obfuscated";
+                tempNode.setAttribute(VALUE_KEYWORD, obfuscatedUrl);
+            }
+            obfuscateAddressAndHost(tempNode);
             NodeList childNodes = node.getChildNodes();
             for (int i = 0; i < childNodes.getLength(); i++) {
                 traverseNodes(childNodes.item(i));
             }
         }
     }
+
+    private void obfuscateAddressAndHost (Node node) {
+        Element tempNode = (Element) node;
+        boolean hasAddressAttribute = tempNode.hasAttribute(ADDRESS_KEYWORD);
+        String addressAttribute = tempNode.getAttribute(ADDRESS_KEYWORD);
+        if (hasAddressAttribute) {
+            if (!addressAttribute.toLowerCase().contains(DEFAULT_ADDRESS)) {
+                tempNode.setAttribute(ADDRESS_KEYWORD, OBFUSCATED_CHANGE + obfuscatedItem);
+                obfuscatedItem++;
+            }
+        }
+
+        boolean hasHostAttribute = tempNode.hasAttribute(HOST_KEYWORD);
+        String hostAttribute = tempNode.getAttribute(HOST_KEYWORD);
+        if (hasHostAttribute) {
+            if (!hostAttribute.toLowerCase().contains(DEFAULT_HOST)) {
+                tempNode.setAttribute(HOST_KEYWORD, OBFUSCATED_CHANGE + obfuscatedItem);
+                obfuscatedItem++;
+            }
+        }
+    }
+
 }
