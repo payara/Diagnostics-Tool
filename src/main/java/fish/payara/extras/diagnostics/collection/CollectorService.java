@@ -266,7 +266,9 @@ public class CollectorService {
     private void compressDirectory(Path filePath, ZipOutputStream zipOutputStream) throws IOException {
         Files.walkFileTree(filePath, new SimpleFileVisitor<Path>() {
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                zipOutputStream.putNextEntry(new ZipEntry(filePath.relativize(file).toString()));
+                //https://pkware.cachefly.net/webdocs/APPNOTE/APPNOTE-6.3.10.TXT paragraph 4.4.17.1
+                String entryName = filePath.relativize(file).toString().replace("\\", "/");
+                zipOutputStream.putNextEntry(new ZipEntry(entryName));
                 Files.copy(file, zipOutputStream);
                 zipOutputStream.closeEntry();
                 return FileVisitResult.CONTINUE;
