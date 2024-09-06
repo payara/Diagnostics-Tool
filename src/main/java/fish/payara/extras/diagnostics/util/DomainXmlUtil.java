@@ -66,11 +66,13 @@ public class DomainXmlUtil {
     private static final String ADDRESS_ATTRIBUTE = "address";
     private static final String DEFAULT_HOST = "localhost";
     private static final String HOST_ATTRIBUTE = "host";
+    private static final String NODE_HOST_ATTRIBUTE = "node-host";
+    private static final String PUBLIC_ADDRESS_ATTRIBUTE = "public-address";
     private static final String PASSWORD_KEYWORD = "password";
     private static final String ADMIN_PASSWORD_KEYWORD = "admin-password";
     private static final String NAME_ATTRIBUTE = "name";
     private static final String VALUE_ATTRIBUTE = "value";
-    private static final String URL_KEYWORD = "URL";
+    private static final String URL_KEYWORD = "url";
 
     private int obfuscatedCounter = 1;
     private Map<String,String> hostsReplacements = new HashMap<>();
@@ -119,7 +121,7 @@ public class DomainXmlUtil {
                     element.setAttribute(VALUE_ATTRIBUTE, PASSWORD_CHANGE);
                 }
             }
-            if (URL_KEYWORD.equalsIgnoreCase(nameAttribute)) {
+            if (nameAttribute.toLowerCase().contains(URL_KEYWORD)) {
                 String obfuscatedUrl = "";
                 String urlAttribute = element.getAttribute(VALUE_ATTRIBUTE);
                 if (urlAttribute.startsWith("jdbc:")) {
@@ -144,6 +146,8 @@ public class DomainXmlUtil {
     private void obfuscateAddressAndHost (Element element) {
         obfuscateAttribute(element, ADDRESS_ATTRIBUTE);
         obfuscateAttribute(element, HOST_ATTRIBUTE);
+        obfuscateAttribute(element, PUBLIC_ADDRESS_ATTRIBUTE);
+        obfuscateAttribute(element, NODE_HOST_ATTRIBUTE);
     }
 
     private void obfuscateAttribute(Element element, String attributeName) {
