@@ -53,17 +53,29 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class DomainXmlUtil {
     private static final Logger LOGGER = Logger.getLogger(DomainXmlUtil.class.getName());
     private static final String PASSWORD_CHANGE = "PASSWORD_HIDDEN";
+    private static final String OBFUSCATED_CHANGE = "OBFUSCATED_HOST_";
+    private static final String DEFAULT_ADDRESS = "0.0.0.0";
+    private static final String ADDRESS_ATTRIBUTE = "address";
+    private static final String DEFAULT_HOST = "localhost";
+    private static final String HOST_ATTRIBUTE = "host";
+    private static final String NODE_HOST_ATTRIBUTE = "node-host";
+    private static final String PUBLIC_ADDRESS_ATTRIBUTE = "public-address";
     private static final String PASSWORD_KEYWORD = "password";
     private static final String ADMIN_PASSWORD_KEYWORD = "admin-password";
-    private static final String NAME_KEYWORD = "name";
-    private static final String VALUE_KEYWORD = "value";
+    private static final String NAME_ATTRIBUTE = "name";
+    private static final String VALUE_ATTRIBUTE = "value";
+    private static final String URL_KEYWORD = "url";
+
+    private int obfuscatedCounter = 1;
+    private Map<String,String> hostsReplacements = new HashMap<>();
 
     public void obfuscateDomainXml (File xmlFile) {
         try {
@@ -78,42 +90,82 @@ public class DomainXmlUtil {
 
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
-            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            // Don't use automatic indentation as it will add empty spaces.
+            // transformer.setOutputProperty(OutputKeys.INDENT, "yes");
             DOMSource source = new DOMSource(doc);
             StreamResult result = new StreamResult(xmlFile);
             transformer.transform(source, result);
 
             LOGGER.info("Successfully obfuscated " + xmlFile.getAbsolutePath());
         } catch (Exception e) {
-            LOGGER.severe("Error obfuscating XML: " + e.getMessage());
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error obfuscating XML: " + e.getMessage(), e);
         }
     }
 
     private void traverseNodes(Node node) {
         if (node.getNodeType() == Node.ELEMENT_NODE) {
-            Element tempNode = (Element) node;
-            boolean hasPasswordAttribute = tempNode.hasAttribute(PASSWORD_KEYWORD);
-            boolean hasAdminPasswordAttribute = tempNode.hasAttribute(ADMIN_PASSWORD_KEYWORD);
+            Element element = (Element) node;
+            boolean hasPasswordAttribute = element.hasAttribute(PASSWORD_KEYWORD);
+            boolean hasAdminPasswordAttribute = element.hasAttribute(ADMIN_PASSWORD_KEYWORD);
             if (hasPasswordAttribute) {
-                tempNode.setAttribute(PASSWORD_KEYWORD, PASSWORD_CHANGE);
+                element.setAttribute(PASSWORD_KEYWORD, PASSWORD_CHANGE);
             }
             if (hasAdminPasswordAttribute) {
-                tempNode.setAttribute(ADMIN_PASSWORD_KEYWORD, PASSWORD_CHANGE);
+                element.setAttribute(ADMIN_PASSWORD_KEYWORD, PASSWORD_CHANGE);
             }
 
-            String nameAttribute = tempNode.getAttribute(NAME_KEYWORD);
-            boolean hasValueAttribute = tempNode.hasAttribute(VALUE_KEYWORD);
+            String nameAttribute = element.getAttribute(NAME_ATTRIBUTE);
+            boolean hasValueAttribute = element.hasAttribute(VALUE_ATTRIBUTE);
             if (nameAttribute.toLowerCase().contains(PASSWORD_KEYWORD)) {
                 if (hasValueAttribute) {
-                    tempNode.setAttribute(VALUE_KEYWORD, PASSWORD_CHANGE);
+                    element.setAttribute(VALUE_ATTRIBUTE, PASSWORD_CHANGE);
                 }
             }
-
+            if (nameAttribute.toLowerCase().contains(URL_KEYWORD)) {
+                String obfuscatedUrl = "";
+                String urlAttribute = element.getAttribute(VALUE_ATTRIBUTE);
+                if (urlAttribute.startsWith("jdbc:")) {
+                    //Keep database type e.g. jdbc:h2:xxx
+                    String[] splitUrl = urlAttribute.split(":", 3);
+                    obfuscatedUrl = splitUrl[0] + ":";
+                    if (splitUrl.length == 3){
+                        obfuscatedUrl+= splitUrl[1] + ":";
+                    }
+                }
+                obfuscatedUrl += "database-obfuscated";
+                element.setAttribute(VALUE_ATTRIBUTE, obfuscatedUrl);
+            }
+            obfuscateAddressAndHost(element);
             NodeList childNodes = node.getChildNodes();
             for (int i = 0; i < childNodes.getLength(); i++) {
                 traverseNodes(childNodes.item(i));
             }
         }
     }
+
+    private void obfuscateAddressAndHost (Element element) {
+        obfuscateAttribute(element, ADDRESS_ATTRIBUTE);
+        obfuscateAttribute(element, HOST_ATTRIBUTE);
+        obfuscateAttribute(element, PUBLIC_ADDRESS_ATTRIBUTE);
+        obfuscateAttribute(element, NODE_HOST_ATTRIBUTE);
+    }
+
+    private void obfuscateAttribute(Element element, String attributeName) {
+        boolean hasKeywordAttribute = element.hasAttribute(attributeName);
+        if (hasKeywordAttribute) {
+            String keywordAttribute = element.getAttribute(attributeName);
+            if (!keywordAttribute.toLowerCase().contains(DEFAULT_ADDRESS) && !keywordAttribute.toLowerCase().contains(DEFAULT_HOST)) {
+                String obfuscatedReplacement;
+                if (hostsReplacements.containsKey(keywordAttribute)) {
+                    obfuscatedReplacement = hostsReplacements.get(keywordAttribute);
+                } else {
+                    obfuscatedReplacement = OBFUSCATED_CHANGE + obfuscatedCounter;
+                    hostsReplacements.put(keywordAttribute, obfuscatedReplacement);
+                    obfuscatedCounter++;
+                }
+                element.setAttribute(attributeName, obfuscatedReplacement);
+            }
+        }
+    }
+
 }
