@@ -69,6 +69,7 @@ public class DomainXmlUtil {
     private static final String NODE_HOST_ATTRIBUTE = "node-host";
     private static final String PUBLIC_ADDRESS_ATTRIBUTE = "public-address";
     private static final String PASSWORD_KEYWORD = "password";
+    private static final String PRINCIPAL_PASSWORD_ATTRIBUTE = "default-principal-password";
     private static final String ADMIN_PASSWORD_KEYWORD = "admin-password";
     private static final String NAME_ATTRIBUTE = "name";
     private static final String VALUE_ATTRIBUTE = "value";
@@ -107,11 +108,15 @@ public class DomainXmlUtil {
             Element element = (Element) node;
             boolean hasPasswordAttribute = element.hasAttribute(PASSWORD_KEYWORD);
             boolean hasAdminPasswordAttribute = element.hasAttribute(ADMIN_PASSWORD_KEYWORD);
+            boolean hasPrincipalPasswordAttribute = element.hasAttribute(PRINCIPAL_PASSWORD_ATTRIBUTE);
             if (hasPasswordAttribute) {
                 element.setAttribute(PASSWORD_KEYWORD, PASSWORD_CHANGE);
             }
             if (hasAdminPasswordAttribute) {
                 element.setAttribute(ADMIN_PASSWORD_KEYWORD, PASSWORD_CHANGE);
+            }
+            if (hasPrincipalPasswordAttribute) {
+                element.setAttribute(PRINCIPAL_PASSWORD_ATTRIBUTE, PASSWORD_CHANGE);
             }
 
             String nameAttribute = element.getAttribute(NAME_ATTRIBUTE);
