@@ -88,7 +88,11 @@ public class LogCollector extends FileCollector {
         Path outputPath = Paths.get(outputPathString, dirSuffix != null ? dirSuffix : "");
 
         if (confirmPath(logPath, false) && confirmPath(outputPath, true)) {
-            collectLogs(logPath, outputPath.resolve("logs"), logName);
+            if (logName.equals("access_log")) {
+                collectLogs(logPath, outputPath.resolve("logs/access"), logName);
+            } else {
+                collectLogs(logPath, outputPath.resolve("logs"), logName);
+            }
         }
 
         return 0;
