@@ -47,7 +47,6 @@ import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -70,6 +69,7 @@ public class DomainXmlUtil {
     private static final String PUBLIC_ADDRESS_ATTRIBUTE = "public-address";
     private static final String PASSWORD_KEYWORD = "password";
     private static final String PRINCIPAL_PASSWORD_ATTRIBUTE = "default-principal-password";
+    private static final String BIND_DN_PASSWORD_ATTRIBUTE = "bind-dn-password";
     private static final String ADMIN_PASSWORD_KEYWORD = "admin-password";
     private static final String NAME_ATTRIBUTE = "name";
     private static final String VALUE_ATTRIBUTE = "value";
@@ -106,18 +106,12 @@ public class DomainXmlUtil {
     private void traverseNodes(Node node) {
         if (node.getNodeType() == Node.ELEMENT_NODE) {
             Element element = (Element) node;
-            boolean hasPasswordAttribute = element.hasAttribute(PASSWORD_KEYWORD);
-            boolean hasAdminPasswordAttribute = element.hasAttribute(ADMIN_PASSWORD_KEYWORD);
-            boolean hasPrincipalPasswordAttribute = element.hasAttribute(PRINCIPAL_PASSWORD_ATTRIBUTE);
-            if (hasPasswordAttribute) {
-                element.setAttribute(PASSWORD_KEYWORD, PASSWORD_CHANGE);
-            }
-            if (hasAdminPasswordAttribute) {
-                element.setAttribute(ADMIN_PASSWORD_KEYWORD, PASSWORD_CHANGE);
-            }
-            if (hasPrincipalPasswordAttribute) {
-                element.setAttribute(PRINCIPAL_PASSWORD_ATTRIBUTE, PASSWORD_CHANGE);
-            }
+
+            obfuscateElementAttribute(element, PASSWORD_KEYWORD);
+            obfuscateElementAttribute(element, ADMIN_PASSWORD_KEYWORD);
+            obfuscateElementAttribute(element, PRINCIPAL_PASSWORD_ATTRIBUTE);
+            obfuscateElementAttribute(element, BIND_DN_PASSWORD_ATTRIBUTE);
+
 
             String nameAttribute = element.getAttribute(NAME_ATTRIBUTE);
             boolean hasValueAttribute = element.hasAttribute(VALUE_ATTRIBUTE);
@@ -148,11 +142,19 @@ public class DomainXmlUtil {
         }
     }
 
+    private void obfuscateElementAttribute(Element element, String elementAttribute) {
+        boolean hasValueAttribute = element.hasAttribute(elementAttribute);
+        if (hasValueAttribute) {
+            element.setAttribute(elementAttribute, PASSWORD_CHANGE);
+        }
+    }
+
     private void obfuscateAddressAndHost (Element element) {
         obfuscateAttribute(element, ADDRESS_ATTRIBUTE);
         obfuscateAttribute(element, HOST_ATTRIBUTE);
         obfuscateAttribute(element, PUBLIC_ADDRESS_ATTRIBUTE);
         obfuscateAttribute(element, NODE_HOST_ATTRIBUTE);
+        obfuscateAttribute(element, URL_KEYWORD);
     }
 
     private void obfuscateAttribute(Element element, String attributeName) {
