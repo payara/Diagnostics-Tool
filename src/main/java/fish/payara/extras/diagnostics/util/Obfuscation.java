@@ -51,16 +51,23 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-public class DomainXmlUtil {
-    private static final Logger LOGGER = Logger.getLogger(DomainXmlUtil.class.getName());
+public class Obfuscation {
+    private static final Logger LOGGER = Logger.getLogger(Obfuscation.class.getName());
     private static final String PASSWORD_CHANGE = "PASSWORD_HIDDEN";
-    private static final String OBFUSCATED_CHANGE = "OBFUSCATED_HOST_";
+    public static final String OBFUSCATED_CHANGE = "OBFUSCATED_HOST_";
     private static final String DEFAULT_ADDRESS = "0.0.0.0";
     private static final String ADDRESS_ATTRIBUTE = "address";
     private static final String DEFAULT_HOST = "localhost";
@@ -75,10 +82,11 @@ public class DomainXmlUtil {
     private static final String VALUE_ATTRIBUTE = "value";
     private static final String URL_KEYWORD = "url";
 
-    private int obfuscatedCounter = 1;
-    private Map<String,String> hostsReplacements = new HashMap<>();
+    public static Map<String,String> hostsReplacements = new HashMap<>();
 
-    public void obfuscateDomainXml (File xmlFile) {
+
+
+    public static void obfuscateDomainXml(File xmlFile) {
         try {
             LOGGER.info("Obfuscating " + xmlFile.getAbsolutePath());
 
@@ -103,7 +111,7 @@ public class DomainXmlUtil {
         }
     }
 
-    private void traverseNodes(Node node) {
+    private static void traverseNodes(Node node) {
         if (node.getNodeType() == Node.ELEMENT_NODE) {
             Element element = (Element) node;
 
@@ -142,14 +150,14 @@ public class DomainXmlUtil {
         }
     }
 
-    private void obfuscateElementAttribute(Element element, String elementAttribute) {
+    private static void obfuscateElementAttribute(Element element, String elementAttribute) {
         boolean hasValueAttribute = element.hasAttribute(elementAttribute);
         if (hasValueAttribute) {
             element.setAttribute(elementAttribute, PASSWORD_CHANGE);
         }
     }
 
-    private void obfuscateAddressAndHost (Element element) {
+    private static void obfuscateAddressAndHost(Element element) {
         obfuscateAttribute(element, ADDRESS_ATTRIBUTE);
         obfuscateAttribute(element, HOST_ATTRIBUTE);
         obfuscateAttribute(element, PUBLIC_ADDRESS_ATTRIBUTE);
@@ -157,7 +165,7 @@ public class DomainXmlUtil {
         obfuscateAttribute(element, URL_KEYWORD);
     }
 
-    private void obfuscateAttribute(Element element, String attributeName) {
+    private static void obfuscateAttribute(Element element, String attributeName) {
         boolean hasKeywordAttribute = element.hasAttribute(attributeName);
         if (hasKeywordAttribute) {
             String keywordAttribute = element.getAttribute(attributeName);
@@ -166,11 +174,37 @@ public class DomainXmlUtil {
                 if (hostsReplacements.containsKey(keywordAttribute)) {
                     obfuscatedReplacement = hostsReplacements.get(keywordAttribute);
                 } else {
-                    obfuscatedReplacement = OBFUSCATED_CHANGE + obfuscatedCounter;
+                    obfuscatedReplacement = OBFUSCATED_CHANGE + (hostsReplacements.size() + 1);
                     hostsReplacements.put(keywordAttribute, obfuscatedReplacement);
-                    obfuscatedCounter++;
                 }
                 element.setAttribute(attributeName, obfuscatedReplacement);
+            }
+        }
+    }
+
+    public static void obfuscateLogData(Path sourceFile, Path destinationFile) throws IOException {
+        try (BufferedReader reader = Files.newBufferedReader(sourceFile);
+             BufferedWriter writer = Files.newBufferedWriter(destinationFile)) {
+            Pattern pattern = Pattern.compile("(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])");
+            String line;
+            while ((line = reader.readLine()) != null) {
+                for (Map.Entry<String, String> entry : hostsReplacements.entrySet()) {
+                    String key = entry.getKey();
+                    String value = entry.getValue();
+                    line = line.replace(key, value);
+                }
+                Matcher matcher = pattern.matcher(line);
+                while (matcher.find()){
+                    String hostName = matcher.group();
+                    if (!hostName.equals(DEFAULT_ADDRESS)){
+                        String obfuscatedReplacement = Obfuscation.OBFUSCATED_CHANGE + (hostsReplacements.size() + 1);
+                        hostsReplacements.put(hostName, obfuscatedReplacement);
+                        line = line.replace(hostName, obfuscatedReplacement);
+                        matcher = pattern.matcher(line);
+                    }
+                }
+                writer.write(line);
+                writer.newLine();
             }
         }
     }
