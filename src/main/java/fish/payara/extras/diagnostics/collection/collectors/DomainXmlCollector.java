@@ -40,7 +40,8 @@
 
 package fish.payara.extras.diagnostics.collection.collectors;
 
-import fish.payara.extras.diagnostics.util.DomainXmlUtil;
+import fish.payara.extras.diagnostics.collection.CollectorService;
+import fish.payara.extras.diagnostics.util.Obfuscation;
 import fish.payara.extras.diagnostics.util.ParamConstants;
 
 import java.nio.file.Path;
@@ -55,14 +56,13 @@ public class DomainXmlCollector extends FileCollector {
     private Logger LOGGER = Logger.getLogger(DomainXmlCollector.class.getName());
     private boolean obfuscateDomainXml;
     private final int COLLECTED_OKAY = 0;
-    private final DomainXmlUtil domainXmlUtil = new DomainXmlUtil();
 
-    public DomainXmlCollector(Path path, boolean obfuscateDomainXml) {
+    public DomainXmlCollector(Path path, boolean obfuscateDomainXml, CollectorService collectorService) {
         this.path = path;
         this.obfuscateDomainXml = obfuscateDomainXml;
     }
 
-    public DomainXmlCollector(Path path, String instanceName, String dirSuffix, boolean obfuscateDomainXml) {
+    public DomainXmlCollector(Path path, String instanceName, String dirSuffix, boolean obfuscateDomainXml, CollectorService collectorService) {
         this.path = path;
         super.setInstanceName(instanceName);
         this.dirSuffix = dirSuffix;
@@ -81,7 +81,7 @@ public class DomainXmlCollector extends FileCollector {
                 LOGGER.info("Collecting domain.xml from " + (getInstanceName() != null ? getInstanceName() : "server"));
                 domainXmlCollected = super.collect();
                 if (domainXmlCollected == COLLECTED_OKAY && obfuscateDomainXml) {
-                    domainXmlUtil.obfuscateDomainXml(resolveDestinationFile().toFile());
+                    Obfuscation.obfuscateDomainXml(resolveDestinationFile().toFile());
                 }
             }
         }

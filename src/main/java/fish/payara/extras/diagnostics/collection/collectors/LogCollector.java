@@ -40,6 +40,8 @@
 
 package fish.payara.extras.diagnostics.collection.collectors;
 
+import fish.payara.extras.diagnostics.collection.CollectorService;
+import fish.payara.extras.diagnostics.util.Obfuscation;
 import fish.payara.extras.diagnostics.util.ParamConstants;
 import org.glassfish.api.logging.LogLevel;
 
@@ -57,26 +59,23 @@ public class LogCollector extends FileCollector {
     private Path logPath;
     private String logName;
     private String dirSuffix;
+    private boolean obfuscateEnabled;
 
-    public LogCollector(Path logPath, String logName) {
+    public LogCollector(Path logPath, String logName, CollectorService collectorService) {
         this.logPath = logPath;
         this.logName = logName;
+        this.obfuscateEnabled = collectorService.getObfuscateEnabled();
     }
 
-    public LogCollector(Path logPath, String instanceName, String logName) {
-        this.logPath = logPath;
+    public LogCollector(Path logPath, String instanceName, String logName, CollectorService collectorService) {
+        this(logPath, logName, collectorService);
         super.setInstanceName(instanceName);
-        this.logName = logName;
     }
 
-    public LogCollector(Path logPath, String instanceName, String dirSuffix, String logName) {
-        this.logPath = logPath;
-        super.setInstanceName(instanceName);
+    public LogCollector(Path logPath, String instanceName, String dirSuffix, String logName, CollectorService collectorService) {
+        this(logPath, instanceName, logName, collectorService);
         this.dirSuffix = dirSuffix;
-        this.logName = logName;
     }
-
-
 
     @Override
     public int collect() {
@@ -147,23 +146,27 @@ public class LogCollector extends FileCollector {
 
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-
             Path relativePath = path.relativize(file);
             if (!file.getFileName().toString().contains(fileContains)) {
                 return FileVisitResult.CONTINUE;
             }
 
+            Path resolvedDestination;
             if (instanceName != null) {
                 String prefix = instanceName + "-";
                 if ((prefix + relativePath).startsWith(prefix + instanceName)) {
                     prefix = "";
                 }
-                Files.copy(file, destination.resolve((prefix + relativePath)));
-
+                resolvedDestination = destination.resolve((prefix + relativePath));
             } else {
-                Files.copy(file, destination.resolve(relativePath));
+                resolvedDestination = destination.resolve(relativePath);
             }
 
+            if (obfuscateEnabled){
+                Obfuscation.obfuscateLogData(file, resolvedDestination);
+            }else {
+                Files.copy(file, resolvedDestination);
+            }
             return FileVisitResult.CONTINUE;
         }
 

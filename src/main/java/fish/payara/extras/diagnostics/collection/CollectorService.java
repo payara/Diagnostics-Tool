@@ -323,21 +323,21 @@ public class CollectorService {
 
             if (domainXml) {
                 Path domainXmlPath = Paths.get((String) parameterMap.get(DOMAIN_XML_FILE_PATH));
-                activeCollectors.add(new DomainXmlCollector(domainXmlPath, obfuscateDomainXml));
+                activeCollectors.add(new DomainXmlCollector(domainXmlPath, obfuscateDomainXml, this));
             }
             if (serverLog) {
                 Path serverLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
-                activeCollectors.add(new LogCollector(serverLogPath, "server.log"));
+                activeCollectors.add(new LogCollector(serverLogPath, "server.log", this));
             }
 
             if (accessLog) {
                 Path accessLogPath = Paths.get((String) parameterMap.get(LOGS_PATH), "access");
-                activeCollectors.add(new LogCollector(accessLogPath, "access_log"));
+                activeCollectors.add(new LogCollector(accessLogPath, "access_log", this));
             }
 
             if (notificationLog) {
                 Path notificationLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
-                activeCollectors.add(new LogCollector(notificationLogPath, "notification.log"));
+                activeCollectors.add(new LogCollector(notificationLogPath, "notification.log", this));
             }
 
             boolean correctDomainRunning = correctDomainRunning();
@@ -392,20 +392,20 @@ public class CollectorService {
     private List<Collector> getLocalCollectors(String instanceRoot) {
         List<Collector> activeCollectors = new ArrayList<>();
         if (domainXml) {
-            activeCollectors.add(new DomainXmlCollector(Paths.get(instanceRoot, "config", "domain.xml"), target, null, obfuscateDomainXml));
+            activeCollectors.add(new DomainXmlCollector(Paths.get(instanceRoot, "config", "domain.xml"), target, null, obfuscateDomainXml, this));
         }
 
         Path logsPath = Paths.get(instanceRoot, "logs");
         if (serverLog) {
-            activeCollectors.add(new LogCollector(logsPath, target, "server.log"));
+            activeCollectors.add(new LogCollector(logsPath, target, "server.log", this));
         }
 
         if (accessLog) {
-            activeCollectors.add(new LogCollector(Paths.get(logsPath.toString(), "access"), target, "access_log"));
+            activeCollectors.add(new LogCollector(Paths.get(logsPath.toString(), "access"), target, "access_log", this));
         }
 
         if (notificationLog) {
-            activeCollectors.add(new LogCollector(logsPath, target, "notification.log"));
+            activeCollectors.add(new LogCollector(logsPath, target, "notification.log", this));
         }
 
         if (jvmReport) {
@@ -425,21 +425,21 @@ public class CollectorService {
         for (Server server : serversList) {
             String finalDirSuffix = Paths.get(dirSuffix, server.getName()).toString();
             if (domainXml) {
-                activeCollectors.add(new DomainXmlCollector(Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "config", "domain.xml"), server.getName(), finalDirSuffix, obfuscateDomainXml));
+                activeCollectors.add(new DomainXmlCollector(Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "config", "domain.xml"), server.getName(), finalDirSuffix, obfuscateDomainXml, this));
             }
 
             Path logPath = Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "logs");
 
             if (serverLog) {
-                activeCollectors.add(new LogCollector(logPath, server.getName(), finalDirSuffix, "server.log"));
+                activeCollectors.add(new LogCollector(logPath, server.getName(), finalDirSuffix, "server.log", this));
             }
 
             if (accessLog) {
-                activeCollectors.add(new LogCollector(Paths.get(logPath.toString(), "access"), server.getName(), finalDirSuffix, "access_log"));
+                activeCollectors.add(new LogCollector(Paths.get(logPath.toString(), "access"), server.getName(), finalDirSuffix, "access_log", this));
             }
 
             if (notificationLog) {
-                activeCollectors.add(new LogCollector(logPath, server.getName(), finalDirSuffix, "notification.log"));
+                activeCollectors.add(new LogCollector(logPath, server.getName(), finalDirSuffix, "notification.log", this));
             }
 
             if (jvmReport) {
@@ -497,5 +497,9 @@ public class CollectorService {
         } catch (CommandException e) {
             return false;
         }
+    }
+
+    public boolean getObfuscateEnabled() {
+        return obfuscateDomainXml;
     }
 }
