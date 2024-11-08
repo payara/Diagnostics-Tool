@@ -81,6 +81,7 @@ public class Obfuscation {
     private static final String NAME_ATTRIBUTE = "name";
     private static final String VALUE_ATTRIBUTE = "value";
     private static final String URL_KEYWORD = "url";
+    private static final Pattern IP_ADDRESS_PATTERN = Pattern.compile("(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])");
 
     public static Map<String,String> hostsReplacements = new HashMap<>();
 
@@ -185,7 +186,6 @@ public class Obfuscation {
     public static void obfuscateLogData(Path sourceFile, Path destinationFile) throws IOException {
         try (BufferedReader reader = Files.newBufferedReader(sourceFile);
              BufferedWriter writer = Files.newBufferedWriter(destinationFile)) {
-            Pattern pattern = Pattern.compile("(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])");
             String line;
             while ((line = reader.readLine()) != null) {
                 for (Map.Entry<String, String> entry : hostsReplacements.entrySet()) {
@@ -193,14 +193,14 @@ public class Obfuscation {
                     String value = entry.getValue();
                     line = line.replace(key, value);
                 }
-                Matcher matcher = pattern.matcher(line);
+                Matcher matcher = IP_ADDRESS_PATTERN.matcher(line);
                 while (matcher.find()){
                     String hostName = matcher.group();
                     if (!hostName.equals(DEFAULT_ADDRESS)){
                         String obfuscatedReplacement = Obfuscation.OBFUSCATED_CHANGE + (hostsReplacements.size() + 1);
                         hostsReplacements.put(hostName, obfuscatedReplacement);
                         line = line.replace(hostName, obfuscatedReplacement);
-                        matcher = pattern.matcher(line);
+                        matcher = IP_ADDRESS_PATTERN.matcher(line);
                     }
                 }
                 writer.write(line);
