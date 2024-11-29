@@ -420,6 +420,7 @@ public class CollectorService {
     }
 
 
+
     private void addInstanceCollectors(List<Collector> activeCollectors, List<Server> serversList, String dirSuffix) {
         for (Server server : serversList) {
             String finalDirSuffix = Paths.get(dirSuffix, server.getName()).toString();
@@ -497,5 +498,9 @@ public class CollectorService {
         } catch (CommandException e) {
             return false;
         }
+    }
+
+    public boolean getObfuscateEnabled() {
+        return obfuscateDomainXml;
     }
 }
