@@ -31,19 +31,17 @@ public class DomainUtil {
         return domain.getNodes().getNode();
     }
 
-    public List<Server> getLocalInstances() {
+    public List<Server> getInstances() {
         List<Server> instances = new ArrayList<>();
         List<Node> nodes = getNodes();
         for (Node node : nodes) {
-            if (node.isLocal()) {
-                instances.addAll(domain.getInstancesOnNode(node.getName()));
-            }
+            instances.addAll(domain.getInstancesOnNode(node.getName()));
         }
         return instances;
     }
 
     public List<Server> getStandaloneLocalInstances() {
-        List<Server> instances = getLocalInstances();
+        List<Server> instances = getInstances();
 
         for (DeploymentGroup dg : getDeploymentGroups().getDeploymentGroup()) {
             for (Server dgInstance : dg.getInstances()) {
@@ -60,7 +58,7 @@ public class DomainUtil {
     }
 
     public Server getInstance(String instance) {
-        for (Server server : getLocalInstances()) {
+        for (Server server : getInstances()) {
             if (server.getName().equals(instance)) {
                 return server;
             }
@@ -110,9 +108,9 @@ public class DomainUtil {
     }
 
     public List<String> getInstancesNames() {
-        List<Server> localInstances = getLocalInstances();
+        List<Server> instances = getInstances();
         List<String> instanceNames = new ArrayList<>();
-        localInstances.forEach(instance -> instanceNames.add(instance.getName()));
+        instances.forEach(instance -> instanceNames.add(instance.getName()));
 
         return instanceNames;
     }
