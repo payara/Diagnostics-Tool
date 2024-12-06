@@ -362,20 +362,20 @@ public class CollectorService {
                 //The collectors inside this block, will copy the files with no folder
                 if (domainXml) {
                     Path domainXmlPath = Paths.get((String) parameterMap.get(DOMAIN_XML_FILE_PATH));
-                    activeCollectors.add(new DomainXmlCollector(domainXmlPath, obfuscateDomainXml));
+                    activeCollectors.add(new DomainXmlCollector(domainXmlPath, obfuscateDomainXml, this));
                 }
                 if (serverLog) {
                     Path serverLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
-                    activeCollectors.add(new LogCollector(serverLogPath, "server.log"));
+                    activeCollectors.add(new LogCollector(serverLogPath, "server.log", this));
                 }
                 if (accessLog) {
                     Path accessLogPath = Paths.get((String) parameterMap.get(LOGS_PATH), "access");
-                    activeCollectors.add(new LogCollector(accessLogPath, "access_log"));
+                    activeCollectors.add(new LogCollector(accessLogPath, "access_log", this));
                 }
 
                 if (notificationLog) {
                     Path notificationLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
-                    activeCollectors.add(new LogCollector(notificationLogPath, "notification.log"));
+                    activeCollectors.add(new LogCollector(notificationLogPath, "notification.log", this));
                 }
                 if (heapDump) {
                     activeCollectors.add(new HeapDumpCollector(currentTarget, programOptions, environment, correctDomainRunning));
@@ -426,20 +426,20 @@ public class CollectorService {
             String instanceType = instanceWithType.get(server.getName());
 
             if (domainXml && instanceType.equals("CONFIG")) {
-                activeCollectors.add(new DomainXmlCollector(Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "config", "domain.xml"), server.getName(), finalDirSuffix, obfuscateDomainXml));
+                activeCollectors.add(new DomainXmlCollector(Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "config", "domain.xml"), server.getName(), finalDirSuffix, obfuscateDomainXml, this));
             }
 
             if (instanceType.equals("CONFIG")) {
                 Path logPath = Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "logs");
                 if (serverLog) {
-                    activeCollectors.add(new LogCollector(logPath, server.getName(), finalDirSuffix, "server.log"));
+                    activeCollectors.add(new LogCollector(logPath, server.getName(), finalDirSuffix, "server.log", this));
                 }
                 if (accessLog) {
-                    activeCollectors.add(new LogCollector(Paths.get(logPath.toString(), "access"), server.getName(), finalDirSuffix, "access_log"));
+                    activeCollectors.add(new LogCollector(Paths.get(logPath.toString(), "access"), server.getName(), finalDirSuffix, "access_log", this));
                 }
 
                 if (notificationLog) {
-                    activeCollectors.add(new LogCollector(logPath, server.getName(), finalDirSuffix, "notification.log"));
+                    activeCollectors.add(new LogCollector(logPath, server.getName(), finalDirSuffix, "notification.log", this));
                 }
             }
             if (jvmReport) {
