@@ -165,9 +165,11 @@ public class CollectorService {
                 return 1;
             }
         } else {
+            if (instanceList.isEmpty()) {
+                return 1;
+            }
             domainUtil = new DomainUtil(domain);
             TargetType targetType = getTargetType();
-
             switch (targetType) {
                 case DOMAIN:
                         activeCollectors = getActiveCollectors(parameterMap, targetType, instanceList.get(0));
