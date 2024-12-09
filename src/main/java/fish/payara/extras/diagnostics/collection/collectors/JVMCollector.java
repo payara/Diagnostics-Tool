@@ -111,7 +111,8 @@ public class JVMCollector implements Collector {
         String suffix = jvmCollectionType == JvmCollectionType.JVM_REPORT ? "-jvm-report.txt" : "-thread-dump.txt";
         byte[] textBytes = text.getBytes();
         try {
-            Files.write(Paths.get(outputPath + "/" + fileName + suffix), textBytes);
+            Files.createDirectories(outputPath);
+            Files.write(Paths.get(outputPath.toString(), fileName + suffix), textBytes);
         } catch (IOException e) {
             return false;
         }
