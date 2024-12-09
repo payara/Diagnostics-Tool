@@ -500,4 +500,8 @@ public class CollectorService {
             return false;
         }
     }
+
+    public boolean getObfuscateEnabled(){
+        return obfuscateDomainXml;
+    }
 }
