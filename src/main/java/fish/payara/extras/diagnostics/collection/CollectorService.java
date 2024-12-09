@@ -46,9 +46,6 @@ import com.sun.enterprise.admin.cli.remote.RemoteCLICommand;
 import com.sun.enterprise.config.serverbeans.Cluster;
 import com.sun.enterprise.config.serverbeans.Domain;
 import com.sun.enterprise.config.serverbeans.Server;
-import com.sun.enterprise.universal.process.ProcessManager;
-import com.sun.enterprise.universal.process.ProcessManagerException;
-import com.sun.enterprise.util.SystemPropertyConstants;
 import fish.payara.enterprise.config.serverbeans.DeploymentGroup;
 import fish.payara.extras.diagnostics.collection.collectors.DomainXmlCollector;
 import fish.payara.extras.diagnostics.collection.collectors.HeapDumpCollector;
@@ -57,11 +54,14 @@ import fish.payara.extras.diagnostics.collection.collectors.LogCollector;
 import fish.payara.extras.diagnostics.util.DomainUtil;
 import fish.payara.extras.diagnostics.util.JvmCollectionType;
 import fish.payara.extras.diagnostics.util.TargetType;
+import org.glassfish.api.ActionReport;
 import org.glassfish.api.admin.CommandException;
+import org.glassfish.api.admin.ParameterMap;
 import org.glassfish.api.logging.LogLevel;
 import org.glassfish.hk2.api.ServiceLocator;
 import org.jvnet.hk2.config.ConfigParser;
 
+import javax.json.JsonString;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -70,6 +70,7 @@ import java.net.URL;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -100,6 +101,8 @@ public class CollectorService {
     private final ServiceLocator serviceLocator;
     private final Map<String, Object> parameterMap;
     private final String nodeDir;
+    private List<String> instanceList = new ArrayList<>();
+    private Map<String, String> instanceWithType = new HashMap<>();
 
     public CollectorService(Map<String, Object> params, Environment environment, ProgramOptions programOptions, String target, ServiceLocator serviceLocator, String domainName, String nodeDir) {
         this.parameterMap = params;
@@ -151,28 +154,36 @@ public class CollectorService {
         if (parameterMap.containsKey(DOMAIN_XML_FILE_PATH)) {
             domain = getDomain((String) parameterMap.get(DOMAIN_XML_FILE_PATH));
         }
-        List<Collector> activeCollectors;
 
+        List<Collector> activeCollectors = new ArrayList<>();
+        // Populates the `targets` list
+        getInstanceList();
+        String instanceTargetPlaceholder = "";
         if (domain == null) {
-            if (target.equals("domain")) {
-                LOGGER.info("No domain found! Nothing will be collected");
+            if (instanceList.isEmpty()) {
+                LOGGER.info("No instances found! Nothing will be collected.");
                 return 1;
             }
-            String instanceRoot = getInstanceRoot();
-            if (instanceRoot == null) return 1;
-            activeCollectors = getLocalCollectors(instanceRoot);
-
         } else {
+            if (instanceList.isEmpty()) {
+                return 1;
+            }
             domainUtil = new DomainUtil(domain);
-            activeCollectors = getActiveCollectors(parameterMap, getTargetType());
-
-            if (activeCollectors.isEmpty()) {
-                String instanceRoot = getInstanceRoot();
-                if (instanceRoot == null) return 1;
-                activeCollectors = getLocalCollectors(instanceRoot);
+            TargetType targetType = getTargetType();
+            switch (targetType) {
+                case DOMAIN:
+                        activeCollectors = getActiveCollectors(parameterMap, targetType, instanceList.get(0));
+                    break;
+                case DEPLOYMENT_GROUP:
+                case CLUSTER:
+                    activeCollectors = getActiveCollectors(parameterMap, targetType, instanceTargetPlaceholder);
+                    break;
+                case INSTANCE:
+                    int indexOfInstance = instanceList.indexOf(target);
+                    activeCollectors = getActiveCollectors(parameterMap, targetType, instanceList.get(indexOfInstance));
+                    break;
             }
         }
-
 
         if (activeCollectors.isEmpty()) {
             LOGGER.info("No collectors are active. Nothing will be collected!");
@@ -205,37 +216,62 @@ public class CollectorService {
         return result;
     }
 
-    private String getInstanceRoot() {
-        String instanceRoot;
-        File asadmin = new File(SystemPropertyConstants.getAsAdminScriptLocation());
-        List<String> command = new ArrayList<>();
-        command.add(asadmin.getAbsolutePath());
-        command.add("--interactive=false");
-        command.add("_get-instance-install-dir");
-
-        if (nodeDir != null) {
-            command.add("--nodedir=" + nodeDir);
-        }
-
-        command.add(target);
-
-        ProcessManager processManager = new ProcessManager(command);
-        processManager.waitForReaderThreads(true);
+    private void getInstanceList() {
         try {
-            processManager.setEcho(false);
-            processManager.execute();
-            if (processManager.getExitValue() == 0) {
-                String result = processManager.getStdout();
-                instanceRoot = result.replace("Command _get-instance-install-dir executed successfully.", "").trim();
-            } else {
-                LOGGER.info("Target not found! Try specifying the nodedir parameter");
-                return null;
+            ParameterMap parameterMap = new ParameterMap();
+            parameterMap.add("long", "true");
+            programOptions.updateOptions(parameterMap);
+
+
+            RemoteCLICommand listNodesRemoteCLICommand = new RemoteCLICommand("list-nodes", programOptions, environment);
+            String nodesOutput = listNodesRemoteCLICommand.executeAndReturnOutput();
+            //Action report does not contain the referenceBy values and the node type.
+            //ActionReport nodesResult = listNodesRemoteCLICommand.executeAndReturnActionReport();
+
+            RemoteCLICommand listInstancesRemoteCLICommand = new RemoteCLICommand("list-instances", programOptions, environment);
+            ActionReport instanceResult = listInstancesRemoteCLICommand.executeAndReturnActionReport("list-instances");
+
+            if (instanceResult.getActionExitCode() == ActionReport.ExitCode.SUCCESS) {
+                List<Map<String, Object>> instanceList = (List<Map<String, Object>>) instanceResult.getExtraProperties().get("instanceList");
+
+                boolean skipFirstLine = true;
+                String[] lines = nodesOutput.split("\\n");
+                int referencedByIndex = nodesOutput.indexOf("Referenced By");
+
+                for (String line : lines) {
+                    if (skipFirstLine) {
+                        skipFirstLine = false;
+                        continue;
+                    }
+                    String[] parts = line.split("\\s+");
+
+                    if (parts.length >= 2) {
+                        String nodeType = parts[1];
+                        String nodeReferenceBy = line.substring(referencedByIndex).trim();
+                        String[]  instances = nodeReferenceBy.split(", ");
+                        for (String instance : instances) {
+                            if (!instance.isEmpty()){
+                                LOGGER.info("Adding instance: " + instance + " with type: " + nodeType);
+                                instanceWithType.put(instance, nodeType);
+                            }
+                        }
+                    }
+                }
+
+                for (Map<String, Object> instance : instanceList) {
+                    Object nameObject = instance.get("name");
+                    String instanceName = ((JsonString) nameObject).getString();
+                    this.instanceList.add(instanceName);
+                }
+                LOGGER.info("Instance List " + this.instanceList);
             }
-        } catch (ProcessManagerException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            if (instanceList.isEmpty()) {
+                LOGGER.info("No instances found! Nothing will be collected.");
+            }
+            LOGGER.log(LogLevel.SEVERE, "Could not execute command. " , e);
         }
-        return instanceRoot;
-    }
+        }
 
     public TargetType getTargetType() {
         if (target.equals("domain")) {
@@ -313,48 +349,45 @@ public class CollectorService {
      * @param parameterMap
      * @return List&lt;Collector&gt;
      */
-    public List<Collector> getActiveCollectors(Map<String, Object> parameterMap, TargetType targetType) {
+    public List<Collector> getActiveCollectors(Map<String, Object> parameterMap, TargetType targetType, String currentTarget) {
         List<Collector> activeCollectors = new ArrayList<>();
 
         if (parameterMap == null) {
             return activeCollectors;
         }
+
+        boolean correctDomainRunning = correctDomainRunning();
+        String instanceType = instanceWithType.get(currentTarget);
+
         if (targetType == TargetType.DOMAIN) {
+            if (instanceType.equals("CONFIG")) {
+                //The collectors inside this block, will copy the files with no folder
+                if (domainXml) {
+                    Path domainXmlPath = Paths.get((String) parameterMap.get(DOMAIN_XML_FILE_PATH));
+                    activeCollectors.add(new DomainXmlCollector(domainXmlPath, obfuscateDomainXml, this));
+                }
+                if (serverLog) {
+                    Path serverLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
+                    activeCollectors.add(new LogCollector(serverLogPath, "server.log", this));
+                }
+                if (accessLog) {
+                    Path accessLogPath = Paths.get((String) parameterMap.get(LOGS_PATH), "access");
+                    activeCollectors.add(new LogCollector(accessLogPath, "access_log", this));
+                }
 
-            if (domainXml) {
-                Path domainXmlPath = Paths.get((String) parameterMap.get(DOMAIN_XML_FILE_PATH));
-                activeCollectors.add(new DomainXmlCollector(domainXmlPath, obfuscateDomainXml, this));
-            }
-            if (serverLog) {
-                Path serverLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
-                activeCollectors.add(new LogCollector(serverLogPath, "server.log", this));
-            }
-
-            if (accessLog) {
-                Path accessLogPath = Paths.get((String) parameterMap.get(LOGS_PATH), "access");
-                activeCollectors.add(new LogCollector(accessLogPath, "access_log", this));
-            }
-
-            if (notificationLog) {
-                Path notificationLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
-                activeCollectors.add(new LogCollector(notificationLogPath, "notification.log", this));
-            }
-
-            boolean correctDomainRunning = correctDomainRunning();
-            if (jvmReport) {
-                activeCollectors.add(new JVMCollector(environment, programOptions, "server", JvmCollectionType.JVM_REPORT, correctDomainRunning));
-            }
-
-            if (threadDump) {
-                activeCollectors.add(new JVMCollector(environment, programOptions, "server", JvmCollectionType.THREAD_DUMP, correctDomainRunning));
+                if (notificationLog) {
+                    Path notificationLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
+                    activeCollectors.add(new LogCollector(notificationLogPath, "notification.log", this));
+                }
+                if (heapDump) {
+                    activeCollectors.add(new HeapDumpCollector(currentTarget, programOptions, environment, correctDomainRunning));
+                }
             }
 
-            if (heapDump) {
-                activeCollectors.add(new HeapDumpCollector("server", programOptions, environment, correctDomainRunning));
-            }
-
+            //adds folder for instance
             addInstanceCollectors(activeCollectors, domainUtil.getStandaloneLocalInstances(), "");
 
+            //adds folder for DG
             for (DeploymentGroup deploymentGroup : domainUtil.getDeploymentGroups().getDeploymentGroup()) {
                 addInstanceCollectors(activeCollectors, deploymentGroup.getInstances(), deploymentGroup.getName());
             }
@@ -362,12 +395,11 @@ public class CollectorService {
             for (Cluster cluster : domainUtil.getClusters().getCluster()) {
                 addInstanceCollectors(activeCollectors, cluster.getInstances(), cluster.getName());
             }
-
         }
 
         if (targetType == TargetType.INSTANCE) {
             List<Server> servers = new ArrayList<>();
-            servers.add(domainUtil.getInstance(target));
+            servers.add(domainUtil.getInstance(currentTarget));
             addInstanceCollectors(activeCollectors, servers, "");
         }
 
@@ -389,59 +421,30 @@ public class CollectorService {
         return activeCollectors;
     }
 
-    private List<Collector> getLocalCollectors(String instanceRoot) {
-        List<Collector> activeCollectors = new ArrayList<>();
-        if (domainXml) {
-            activeCollectors.add(new DomainXmlCollector(Paths.get(instanceRoot, "config", "domain.xml"), target, null, obfuscateDomainXml, this));
-        }
 
-        Path logsPath = Paths.get(instanceRoot, "logs");
-        if (serverLog) {
-            activeCollectors.add(new LogCollector(logsPath, target, "server.log", this));
-        }
-
-        if (accessLog) {
-            activeCollectors.add(new LogCollector(Paths.get(logsPath.toString(), "access"), target, "access_log", this));
-        }
-
-        if (notificationLog) {
-            activeCollectors.add(new LogCollector(logsPath, target, "notification.log", this));
-        }
-
-        if (jvmReport) {
-            activeCollectors.add(new JVMCollector(environment, programOptions, target, JvmCollectionType.JVM_REPORT));
-        }
-
-        if (threadDump) {
-            activeCollectors.add(new JVMCollector(environment, programOptions, target, JvmCollectionType.THREAD_DUMP));
-        }
-        if (heapDump) {
-            activeCollectors.add(new HeapDumpCollector(target, programOptions, environment));
-        }
-        return activeCollectors;
-    }
 
     private void addInstanceCollectors(List<Collector> activeCollectors, List<Server> serversList, String dirSuffix) {
         for (Server server : serversList) {
             String finalDirSuffix = Paths.get(dirSuffix, server.getName()).toString();
-            if (domainXml) {
+            String instanceType = instanceWithType.get(server.getName());
+
+            if (domainXml && instanceType.equals("CONFIG")) {
                 activeCollectors.add(new DomainXmlCollector(Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "config", "domain.xml"), server.getName(), finalDirSuffix, obfuscateDomainXml, this));
             }
 
-            Path logPath = Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "logs");
+            if (instanceType.equals("CONFIG")) {
+                Path logPath = Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "logs");
+                if (serverLog) {
+                    activeCollectors.add(new LogCollector(logPath, server.getName(), finalDirSuffix, "server.log", this));
+                }
+                if (accessLog) {
+                    activeCollectors.add(new LogCollector(Paths.get(logPath.toString(), "access"), server.getName(), finalDirSuffix, "access_log", this));
+                }
 
-            if (serverLog) {
-                activeCollectors.add(new LogCollector(logPath, server.getName(), finalDirSuffix, "server.log", this));
+                if (notificationLog) {
+                    activeCollectors.add(new LogCollector(logPath, server.getName(), finalDirSuffix, "notification.log", this));
+                }
             }
-
-            if (accessLog) {
-                activeCollectors.add(new LogCollector(Paths.get(logPath.toString(), "access"), server.getName(), finalDirSuffix, "access_log", this));
-            }
-
-            if (notificationLog) {
-                activeCollectors.add(new LogCollector(logPath, server.getName(), finalDirSuffix, "notification.log", this));
-            }
-
             if (jvmReport) {
                 activeCollectors.add(new JVMCollector(environment, programOptions, server.getName(), JvmCollectionType.JVM_REPORT, finalDirSuffix));
             }
@@ -449,7 +452,7 @@ public class CollectorService {
             if (threadDump) {
                 activeCollectors.add(new JVMCollector(environment, programOptions, server.getName(), JvmCollectionType.THREAD_DUMP, finalDirSuffix));
             }
-            if (heapDump) {
+            if (heapDump && instanceType.equals("CONFIG")) {
                 activeCollectors.add(new HeapDumpCollector(server.getName(), programOptions, environment, finalDirSuffix));
             }
         }
