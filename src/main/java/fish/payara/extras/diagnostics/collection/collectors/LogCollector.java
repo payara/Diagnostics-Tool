@@ -40,45 +40,64 @@
 
 package fish.payara.extras.diagnostics.collection.collectors;
 
+import com.sun.enterprise.admin.cli.Environment;
+import com.sun.enterprise.admin.cli.ProgramOptions;
+import com.sun.enterprise.admin.cli.remote.RemoteCLICommand;
 import fish.payara.extras.diagnostics.collection.CollectorService;
-import fish.payara.extras.diagnostics.util.Obfuscation;
 import fish.payara.extras.diagnostics.util.ParamConstants;
-import org.glassfish.api.logging.LogLevel;
+import org.glassfish.api.ActionReport;
+import org.glassfish.api.admin.CommandException;
+import org.glassfish.api.admin.ParameterMap;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
+import java.io.OutputStream;
+import java.nio.file.*;
 import java.util.Map;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class LogCollector extends FileCollector {
+
+    private Map<String, Object> params;
 
     private Path logPath;
     private String logName;
     private String dirSuffix;
     private boolean obfuscateEnabled;
+    private String target;
+    private String instanceName;
+    private final ProgramOptions programOptions;
+    private final Environment environment;
+    private Logger LOGGER = Logger.getLogger(LogCollector.class.getName());
+    private boolean logForServerCollected = false;
 
-    public LogCollector(Path logPath, String logName, CollectorService collectorService) {
-        this.logPath = logPath;
+    public LogCollector(String logName, CollectorService collectorService, Environment environment, ProgramOptions programOptions) {
+
         this.logName = logName;
         this.obfuscateEnabled = collectorService.getObfuscateEnabled();
+        this.environment = environment;
+        this.programOptions = programOptions;
+        this.target = collectorService.getTarget();
     }
 
-    public LogCollector(Path logPath, String instanceName, String logName, CollectorService collectorService) {
-        this(logPath, logName, collectorService);
+    public LogCollector(String instanceName, String logName, CollectorService collectorService,  Environment environment, ProgramOptions programOptions) {
+        this(logName, collectorService, environment, programOptions);
         super.setInstanceName(instanceName);
+        instanceName = instanceName;
     }
 
-    public LogCollector(Path logPath, String instanceName, String dirSuffix, String logName, CollectorService collectorService) {
-        this(logPath, instanceName, logName, collectorService);
+    public LogCollector(String instanceName, String dirSuffix, String logName, CollectorService collectorService,  Environment environment, ProgramOptions programOptions) {
+        this(instanceName, logName, collectorService, environment, programOptions);
         this.dirSuffix = dirSuffix;
     }
 
     @Override
-    public int collect() {
+    public int collect(){
         Map<String, Object> params = getParams();
         if (params == null) {
             return 0;
@@ -86,92 +105,85 @@ public class LogCollector extends FileCollector {
         String outputPathString = (String) params.get(ParamConstants.DIR_PARAM);
         Path outputPath = Paths.get(outputPathString, dirSuffix != null ? dirSuffix : "");
 
-        if (confirmPath(logPath, false) && confirmPath(outputPath, true)) {
-            if (logName.equals("access_log")) {
-                collectLogs(logPath, outputPath.resolve("logs/access"), logName);
-            } else {
-                collectLogs(logPath, outputPath.resolve("logs"), logName);
-            }
+        collectLogs(outputPath);
+        if (!logForServerCollected){
+            collectLogs(outputPath);
+            logForServerCollected = true;
         }
 
         return 0;
     }
 
-    private int collectLogs(Path sourcePath, Path destinationPath, String fileContains) {
-        if (Files.exists(sourcePath)) {
-            collectExistingLogs(sourcePath, destinationPath,fileContains);
-        } else {
-            logger.log(LogLevel.SEVERE, "Could not find directory {0}", new Object[]{sourcePath});
-            return 1;
-        }
-        return 0;
-    }
-
-    private void collectExistingLogs(Path sourcePath, Path destinationPath, String fileContains) {
+    private boolean collectLogs(Path outputPath) {
+        //./asadmin collect-log-files --target xx --retrieve true /home/flavio/... will create /logs/target
         try {
-            logger.info(String.format("Collecting %s from %s", logName, (getInstanceName() != null ? getInstanceName() : "server")));
-            CopyDirectoryVisitor copyDirectoryVisitor = new CopyDirectoryVisitor(destinationPath, fileContains);
-            copyDirectoryVisitor.setInstanceName(getInstanceName());
-            Files.walkFileTree(sourcePath, copyDirectoryVisitor);
-        } catch (IOException io) {
-            logger.log(LogLevel.SEVERE, "Could not copy directory " + sourcePath + " to path " + destinationPath.toString());
-            io.printStackTrace();
+            if (!target.equals("domain")){
+                ParameterMap parameterMap = new ParameterMap();
+                parameterMap.add("target", target);
+                programOptions.updateOptions(parameterMap);
+            }
+            programOptions.setInteractive(false);
+
+
+            RemoteCLICommand remoteCLICommand = new RemoteCLICommand("collect-log-files", programOptions, environment);
+            String result = remoteCLICommand.executeAndReturnOutput("collect-log-files");
+            ActionReport report = remoteCLICommand.executeAndReturnActionReport();
+
+            String zipFilePath = parseCommandZipFilePath(result);
+            if (zipFilePath == null) {
+                LOGGER.info("Failed to extract path");
+                return false;
+            }
+
+            unzipFile(Paths.get(zipFilePath), outputPath);
+
+            if (report.getActionExitCode() == ActionReport.ExitCode.SUCCESS) {
+                LOGGER.info("Log has been collected successfully");
+            }
+        } catch (CommandException e) {
+            LOGGER.info(e.getMessage());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
+        return false;
     }
 
-    private class CopyDirectoryVisitor extends SimpleFileVisitor<Path> {
+    private String parseCommandZipFilePath(String commandOutput) {
+        Pattern pattern = Pattern.compile("Created Zip file under (.+\\.zip)");
+        Matcher matcher = pattern.matcher(commandOutput);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return null;
+    }
 
-        private final Path destination;
-        private Path path = null;
-        private final String fileContains;
-        private String instanceName;
-
-        public CopyDirectoryVisitor(Path destination, String fileContains) {
-            this.destination = destination;
-            this.fileContains = fileContains;
+    private void unzipFile(Path zipFilePath, Path outputDir) throws IOException {
+        Path finalOutputFilePath = null;
+        if (!Files.exists(outputDir)) {
+            Files.createDirectories(outputDir);
         }
 
-        @Override
-        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-            if (path == null) {
-                this.path = dir;
-            }
-
-            Path relativeDir = path.relativize(dir);
-            Path destinationDir = destination.resolve(relativeDir);
-            Files.createDirectories(destinationDir);
-
-            return FileVisitResult.CONTINUE;
-        }
-
-        @Override
-        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-            Path relativePath = path.relativize(file);
-            if (!file.getFileName().toString().contains(fileContains)) {
-                return FileVisitResult.CONTINUE;
-            }
-
-            Path resolvedDestination;
-            if (instanceName != null) {
-                String prefix = instanceName + "-";
-                if ((prefix + relativePath).startsWith(prefix + instanceName)) {
-                    prefix = "";
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFilePath.toFile()))) {
+            ZipEntry entry; // current file, shows like: logs/server/server.log
+            while ((entry = zis.getNextEntry()) != null) {
+                finalOutputFilePath = outputDir.resolve(entry.getName());
+                if (entry.isDirectory()) {
+                    Files.createDirectories(finalOutputFilePath);
+                } else {
+                    Files.createDirectories(finalOutputFilePath.getParent());
+                    try (OutputStream os = new FileOutputStream(finalOutputFilePath.toFile())) {
+                        byte[] buffer = new byte[1024];
+                        while (zis.read(buffer) > 0) {
+                            os.write(buffer);
+                        }
+                    }
                 }
-                resolvedDestination = destination.resolve((prefix + relativePath));
-            } else {
-                resolvedDestination = destination.resolve(relativePath);
+                zis.closeEntry();
             }
-
-            if (obfuscateEnabled){
-                Obfuscation.obfuscateLogData(file, resolvedDestination);
-            }else {
-                Files.copy(file, resolvedDestination);
-            }
-            return FileVisitResult.CONTINUE;
         }
-
-        public void setInstanceName(String instanceName) {
-            this.instanceName = instanceName;
-        }
+        LOGGER.info("Unzipped logs to: " + finalOutputFilePath); // Added to see which folder/file is created first
     }
 }
+
+
+// I dont want /logs/instance/...
