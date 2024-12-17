@@ -115,7 +115,7 @@ public class LogCollector extends FileCollector {
     }
 
     private boolean collectLogs(Path outputPath) {
-        //./asadmin collect-log-files --target xx --retrieve true /home/flavio/... will create /logs/target
+        //./asadmin collect-log-files --target xx --retrieve true /home/user/... will create /logs/target
         try {
             if (!target.equals("domain")){
                 ParameterMap parameterMap = new ParameterMap();
@@ -184,6 +184,3 @@ public class LogCollector extends FileCollector {
         LOGGER.info("Unzipped logs to: " + finalOutputFilePath); // Added to see which folder/file is created first
     }
 }
-
-
-// I dont want /logs/instance/...
