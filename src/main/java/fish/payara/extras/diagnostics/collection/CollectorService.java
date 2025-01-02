@@ -161,27 +161,28 @@ public class CollectorService {
         String instanceTargetPlaceholder = "";
         if (domain == null) {
             if (instanceList.isEmpty()) {
-                LOGGER.info("No instances found! Nothing will be collected.");
-                return 1;
+                activeCollectors = getActiveCollectors(parameterMap, TargetType.DOMAIN, instanceTargetPlaceholder);
             }
         } else {
             if (instanceList.isEmpty()) {
-                return 1;
+                activeCollectors = getActiveCollectors(parameterMap, TargetType.DOMAIN, instanceTargetPlaceholder);
             }
-            domainUtil = new DomainUtil(domain);
-            TargetType targetType = getTargetType();
-            switch (targetType) {
-                case DOMAIN:
+            else {
+                domainUtil = new DomainUtil(domain);
+                TargetType targetType = getTargetType();
+                switch (targetType) {
+                    case DOMAIN:
                         activeCollectors = getActiveCollectors(parameterMap, targetType, instanceList.get(0));
-                    break;
-                case DEPLOYMENT_GROUP:
-                case CLUSTER:
-                    activeCollectors = getActiveCollectors(parameterMap, targetType, instanceTargetPlaceholder);
-                    break;
-                case INSTANCE:
-                    int indexOfInstance = instanceList.indexOf(target);
-                    activeCollectors = getActiveCollectors(parameterMap, targetType, instanceList.get(indexOfInstance));
-                    break;
+                        break;
+                    case DEPLOYMENT_GROUP:
+                    case CLUSTER:
+                        activeCollectors = getActiveCollectors(parameterMap, targetType, instanceTargetPlaceholder);
+                        break;
+                    case INSTANCE:
+                        int indexOfInstance = instanceList.indexOf(target);
+                        activeCollectors = getActiveCollectors(parameterMap, targetType, instanceList.get(indexOfInstance));
+                        break;
+                }
             }
         }
 
@@ -360,40 +361,41 @@ public class CollectorService {
         String instanceType = instanceWithType.get(currentTarget);
 
         if (targetType == TargetType.DOMAIN) {
-            if (instanceType.equals("CONFIG")) {
                 //The collectors inside this block, will copy the files with no folder
-                if (domainXml) {
-                    Path domainXmlPath = Paths.get((String) parameterMap.get(DOMAIN_XML_FILE_PATH));
-                    activeCollectors.add(new DomainXmlCollector(domainXmlPath, obfuscateDomainXml, this));
-                }
-                if (serverLog) {
-                    Path serverLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
-                    activeCollectors.add(new LogCollector(serverLogPath, "server.log", this));
-                }
-                if (accessLog) {
-                    Path accessLogPath = Paths.get((String) parameterMap.get(LOGS_PATH), "access");
-                    activeCollectors.add(new LogCollector(accessLogPath, "access_log", this));
-                }
-
-                if (notificationLog) {
-                    Path notificationLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
-                    activeCollectors.add(new LogCollector(notificationLogPath, "notification.log", this));
-                }
-                if (heapDump) {
-                    activeCollectors.add(new HeapDumpCollector(currentTarget, programOptions, environment, correctDomainRunning));
-                }
+            if (domainXml) {
+                Path domainXmlPath = Paths.get((String) parameterMap.get(DOMAIN_XML_FILE_PATH));
+                activeCollectors.add(new DomainXmlCollector(domainXmlPath, obfuscateDomainXml, this));
             }
+            if (serverLog) {
+                activeCollectors.add(new LogCollector("server.log", this, environment, programOptions));
+            }
+//          if (accessLog) {
+//              Path accessLogPath = Paths.get((String) parameterMap.get(LOGS_PATH), "access");
+//              activeCollectors.add(new LogCollector(accessLogPath, "access_log", this, environment, programOptions));
+//          }
+//
+//          if (notificationLog) {
+//              Path notificationLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
+//              activeCollectors.add(new LogCollector(notificationLogPath, "notification.log", this,environment, programOptions));
+//          }
+            if (heapDump) {
+                activeCollectors.add(new HeapDumpCollector(currentTarget, programOptions, environment, correctDomainRunning));
+            }
+
 
             //adds folder for instance
-            addInstanceCollectors(activeCollectors, domainUtil.getStandaloneLocalInstances(), "");
+            if (!instanceList.isEmpty()) {
+                addInstanceCollectors(activeCollectors, domainUtil.getStandaloneLocalInstances(), "");
 
-            //adds folder for DG
-            for (DeploymentGroup deploymentGroup : domainUtil.getDeploymentGroups().getDeploymentGroup()) {
-                addInstanceCollectors(activeCollectors, deploymentGroup.getInstances(), deploymentGroup.getName());
-            }
 
-            for (Cluster cluster : domainUtil.getClusters().getCluster()) {
-                addInstanceCollectors(activeCollectors, cluster.getInstances(), cluster.getName());
+                //adds folder for DG
+                for (DeploymentGroup deploymentGroup : domainUtil.getDeploymentGroups().getDeploymentGroup()) {
+                    addInstanceCollectors(activeCollectors, deploymentGroup.getInstances(), deploymentGroup.getName());
+                }
+
+                for (Cluster cluster : domainUtil.getClusters().getCluster()) {
+                    addInstanceCollectors(activeCollectors, cluster.getInstances(), cluster.getName());
+                }
             }
         }
 
@@ -431,19 +433,16 @@ public class CollectorService {
                 activeCollectors.add(new DomainXmlCollector(Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "config", "domain.xml"), server.getName(), finalDirSuffix, obfuscateDomainXml, this));
             }
 
-            if (instanceType.equals("CONFIG")) {
-                Path logPath = Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "logs");
-                if (serverLog) {
-                    activeCollectors.add(new LogCollector(logPath, server.getName(), finalDirSuffix, "server.log", this));
-                }
-                if (accessLog) {
-                    activeCollectors.add(new LogCollector(Paths.get(logPath.toString(), "access"), server.getName(), finalDirSuffix, "access_log", this));
-                }
-
-                if (notificationLog) {
-                    activeCollectors.add(new LogCollector(logPath, server.getName(), finalDirSuffix, "notification.log", this));
-                }
+            if (serverLog) {
+                activeCollectors.add(new LogCollector(server.getName(), finalDirSuffix, "server.log", this, environment, programOptions));
             }
+//                if (accessLog) {
+//                    activeCollectors.add(new LogCollector(Paths.get(logPath.toString(), "access"), server.getName(), finalDirSuffix, "access_log", this, environment, programOptions));
+//                }
+//
+//                if (notificationLog) {
+//                    activeCollectors.add(new LogCollector(logPath, server.getName(), finalDirSuffix, "notification.log", this, environment, programOptions));
+//                }
             if (jvmReport) {
                 activeCollectors.add(new JVMCollector(environment, programOptions, server.getName(), JvmCollectionType.JVM_REPORT, finalDirSuffix));
             }
@@ -503,5 +502,9 @@ public class CollectorService {
 
     public boolean getObfuscateEnabled(){
         return obfuscateDomainXml;
+    }
+
+    public String getTarget(){
+        return target;
     }
 }
