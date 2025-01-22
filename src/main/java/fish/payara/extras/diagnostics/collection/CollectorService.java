@@ -250,7 +250,7 @@ public class CollectorService {
                     }
                     String[] parts = line.split("\\s+");
 
-                    if (parts.length >= 2) {
+                    if (parts.length >= 4) {
                         String nodeType = parts[1];
                         String nodeName = parts[0];
                         String nodeInstallationPath = parts[3];
