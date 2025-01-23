@@ -25,6 +25,8 @@ import java.util.regex.Pattern;
 
 public class HeapDumpCollector implements Collector {
 
+    private final String SSH = "SSH";
+
     private Map<String, Object> params;
 
     private String target;
@@ -73,7 +75,7 @@ public class HeapDumpCollector implements Collector {
                 //If it is local, uses destination folder as outputDir
                 parameterMap.add("outputDir", outputPath.toString());
             }
-            if (targetType.equals("SSH")) {
+            if (targetType.equals(SSH)) {
                 parameterMap.add("outputDir", nodeInstallationDirectory);
             }
             programOptions.updateOptions(parameterMap);
@@ -94,11 +96,14 @@ public class HeapDumpCollector implements Collector {
                 LOGGER.warning("Could not extract file name from result.");
             }
 
-            if (targetType.equals("SSH")) {
+            if (fileName != null && targetType.equals(SSH)) {
                 LOGGER.info("Downloading Heap Dump from remote host.");
                 String remoteFile = nodeInstallationDirectory+"/"+fileName;
                 downloadFileUsingSCP(remoteFile, outputPath.toString(), fileName);
+            } else if (targetType.equals(SSH)) {
+                LOGGER.warning("File name is null. Skipping file download");
             }
+
             if (result.startsWith("Warning:") && result.contains("seems to be offline; command generate-heap-dump was not replicated to that instance")) {
                 LOGGER.warning(target + "is offline! Heap Dump will NOT be collected!");
             }
