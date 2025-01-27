@@ -60,6 +60,7 @@ import org.glassfish.api.admin.ParameterMap;
 import org.glassfish.api.logging.LogLevel;
 import org.glassfish.hk2.api.ServiceLocator;
 import org.jvnet.hk2.config.ConfigParser;
+import com.sun.enterprise.config.serverbeans.*;
 
 import javax.json.JsonString;
 import java.io.File;
@@ -103,6 +104,8 @@ public class CollectorService {
     private final String nodeDir;
     private List<String> instanceList = new ArrayList<>();
     private Map<String, String> instanceWithType = new HashMap<>();
+    private Map<String, String> nodeInstallationDirectories= new HashMap<>();
+    private Map<String, String> instanceInNode= new HashMap<>();
 
     public CollectorService(Map<String, Object> params, Environment environment, ProgramOptions programOptions, String target, ServiceLocator serviceLocator, String domainName, String nodeDir) {
         this.parameterMap = params;
@@ -238,6 +241,7 @@ public class CollectorService {
                 boolean skipFirstLine = true;
                 String[] lines = nodesOutput.split("\\n");
                 int referencedByIndex = nodesOutput.indexOf("Referenced By");
+                int installationPathIndex = nodesOutput.indexOf("Installation Directory");
 
                 for (String line : lines) {
                     if (skipFirstLine) {
@@ -246,15 +250,23 @@ public class CollectorService {
                     }
                     String[] parts = line.split("\\s+");
 
-                    if (parts.length >= 2) {
+                    if (parts.length >= 4) {
                         String nodeType = parts[1];
+                        String nodeName = parts[0];
+                        String nodeInstallationPath = parts[3];
                         String nodeReferenceBy = line.substring(referencedByIndex).trim();
+                        String nodeInstallationDirectory = line.substring(installationPathIndex).trim();
                         String[]  instances = nodeReferenceBy.split(", ");
                         for (String instance : instances) {
                             if (!instance.isEmpty()){
                                 LOGGER.info("Adding instance: " + instance + " with type: " + nodeType);
                                 instanceWithType.put(instance, nodeType);
+                                instanceInNode.put(instance, nodeName);
                             }
+                        }
+                        if (!nodeInstallationDirectory.isEmpty()){
+                            LOGGER.info("Adding installation directory: " + nodeInstallationPath + " for node: " + nodeName);
+                            nodeInstallationDirectories.put(nodeName ,nodeInstallationPath);
                         }
                     }
                 }
@@ -272,7 +284,7 @@ public class CollectorService {
             }
             LOGGER.log(LogLevel.SEVERE, "Could not execute command. " , e);
         }
-        }
+    }
 
     public TargetType getTargetType() {
         if (target.equals("domain")) {
@@ -378,9 +390,6 @@ public class CollectorService {
 //              Path notificationLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
 //              activeCollectors.add(new LogCollector(notificationLogPath, "notification.log", this,environment, programOptions));
 //          }
-            if (heapDump) {
-                activeCollectors.add(new HeapDumpCollector(currentTarget, programOptions, environment, correctDomainRunning));
-            }
 
 
             //adds folder for instance
@@ -451,8 +460,8 @@ public class CollectorService {
             if (threadDump) {
                 activeCollectors.add(new JVMCollector(environment, programOptions, server.getName(), JvmCollectionType.THREAD_DUMP, finalDirSuffix));
             }
-            if (heapDump && instanceType.equals("CONFIG")) {
-                activeCollectors.add(new HeapDumpCollector(server.getName(), programOptions, environment, finalDirSuffix));
+            if (heapDump) {
+                activeCollectors.add(new HeapDumpCollector(server.getName(), programOptions, environment, finalDirSuffix, this));
             }
         }
     }
@@ -507,5 +516,22 @@ public class CollectorService {
 
     public String getTarget(){
         return target;
+    }
+
+    public String returnInstanceType(String instance) {
+        return instanceWithType.get(instance);
+    }
+
+    public Node returnCurrentNode(String instance) {
+        String nodeName = instanceInNode.get(instance);
+        return domain.getNodeNamed(nodeName);
+    }
+
+    public String returnNodeInstallationDirectory(String instance) {
+        String nodeName = instanceInNode.get(instance);
+        return nodeInstallationDirectories.get(nodeName);
+    }
+    public ServiceLocator returnServiceLocator(){
+        return serviceLocator;
     }
 }
