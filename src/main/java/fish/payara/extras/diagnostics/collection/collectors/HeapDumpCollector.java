@@ -137,7 +137,7 @@ public class HeapDumpCollector implements Collector {
     private boolean downloadFileUsingSCP(String remoteFile, String localDirectory, String fileName) throws IOException {
         try  {
             ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-            String deleteFileCommand = "cd " + nodeInstallationDirectory + " && rm " + fileName;
+            String deleteFileCommand = "rm "+ nodeInstallationDirectory +"/" + fileName;
             SSHLauncher sshL = getSSHL(serviceLocator);
             sshL.init(node, LOGGER);
             SCPClient scpClient = sshL.getSCPClient();
