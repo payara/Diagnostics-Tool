@@ -265,7 +265,7 @@ public class LogCollector extends FileCollector {
             LOGGER.info("Access log downloaded successfully to: " + localAccessDirectory);
             return true;
         } catch (IOException e) {
-            LOGGER.severe("Error downloading heap dump file: " + e.getMessage());
+            LOGGER.severe("Error downloading access logs: " + e.getMessage());
             return false;
         }
     }
