@@ -16,18 +16,6 @@ pipeline {
     }
     stages {
 
-        stage('Checkout Payara5 master') {
-            steps {
-                script {
-                    checkout changelog: false, poll: true, scm: [$class: 'GitSCM',
-                    branches: [[name: "main"]],
-                    doGenerateSubmoduleConfigurations: false,
-                    extensions: [], 
-                    submoduleCfg: [],
-                    userRemoteConfigs: [[credentialsId: 'payara-devops-github-personal-access-token-as-username-password', url:"https://github.com/payara/Diagnostics-Tool.git"]]]
-                }
-            }
-        }
         stage('Build') {
             steps {
                 script {
