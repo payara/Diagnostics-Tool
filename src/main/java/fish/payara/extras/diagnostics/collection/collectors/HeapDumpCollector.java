@@ -102,7 +102,7 @@ public class HeapDumpCollector implements Collector {
                 downloadFileUsingSCP(remoteFile, outputPath.toString(), fileName);
             }
             if (result.startsWith("Warning:") && result.contains("seems to be offline; command generate-heap-dump was not replicated to that instance")) {
-                LOGGER.warning(target + "is offline! Heap Dump will NOT be collected!");
+                LOGGER.warning(target + " is offline! Heap Dump will NOT be collected!");
             }
         } catch (CommandException e) {
             if (e.getMessage().contains("Remote server does not listen for requests on")) {
