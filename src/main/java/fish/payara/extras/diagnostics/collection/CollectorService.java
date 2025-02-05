@@ -1,7 +1,7 @@
 /*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  *
- * Copyright (c) 2023-2024 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023-2025 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -90,9 +90,9 @@ public class CollectorService {
     private final ProgramOptions programOptions;
     private Boolean domainXml;
     private Boolean obfuscateDomainXml;
-    private Boolean accessLog;
-    private Boolean notificationLog;
-    private Boolean serverLog;
+    public Boolean accessLog;
+    public Boolean notificationLog;
+    public Boolean serverLog;
     private Boolean threadDump;
     private Boolean jvmReport;
     private Boolean heapDump;
@@ -101,7 +101,6 @@ public class CollectorService {
     private final String domainName;
     private final ServiceLocator serviceLocator;
     private final Map<String, Object> parameterMap;
-    private final String nodeDir;
     private List<String> instanceList = new ArrayList<>();
     private Map<String, String> instanceWithType = new HashMap<>();
     private Map<String, String> nodeInstallationDirectories= new HashMap<>();
@@ -114,7 +113,6 @@ public class CollectorService {
         this.programOptions = programOptions;
         this.serviceLocator = serviceLocator;
         this.domainName = domainName;
-        this.nodeDir = nodeDir;
         init();
     }
 
@@ -373,24 +371,15 @@ public class CollectorService {
         String instanceType = instanceWithType.get(currentTarget);
 
         if (targetType == TargetType.DOMAIN) {
-                //The collectors inside this block, will copy the files with no folder
+            //The collectors inside this block, will copy the files with no folder
             if (domainXml) {
                 Path domainXmlPath = Paths.get((String) parameterMap.get(DOMAIN_XML_FILE_PATH));
                 activeCollectors.add(new DomainXmlCollector(domainXmlPath, obfuscateDomainXml, this));
             }
             if (serverLog) {
-                activeCollectors.add(new LogCollector("server.log", this, environment, programOptions));
+                boolean collectDomainLogs = true;
+                activeCollectors.add(new LogCollector("server.log", this, environment, programOptions, collectDomainLogs));
             }
-//          if (accessLog) {
-//              Path accessLogPath = Paths.get((String) parameterMap.get(LOGS_PATH), "access");
-//              activeCollectors.add(new LogCollector(accessLogPath, "access_log", this, environment, programOptions));
-//          }
-//
-//          if (notificationLog) {
-//              Path notificationLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
-//              activeCollectors.add(new LogCollector(notificationLogPath, "notification.log", this,environment, programOptions));
-//          }
-
 
             //adds folder for instance
             if (!instanceList.isEmpty()) {
@@ -443,15 +432,15 @@ public class CollectorService {
             }
 
             if (serverLog) {
-                activeCollectors.add(new LogCollector(server.getName(), finalDirSuffix, "server.log", this, environment, programOptions));
+                activeCollectors.add(new LogCollector(server.getName(), finalDirSuffix, "server.log", this, environment, programOptions, "server", false));
             }
-//                if (accessLog) {
-//                    activeCollectors.add(new LogCollector(Paths.get(logPath.toString(), "access"), server.getName(), finalDirSuffix, "access_log", this, environment, programOptions));
-//                }
-//
-//                if (notificationLog) {
-//                    activeCollectors.add(new LogCollector(logPath, server.getName(), finalDirSuffix, "notification.log", this, environment, programOptions));
-//                }
+            if (accessLog) {
+                activeCollectors.add(new LogCollector(server.getName(), finalDirSuffix, "access_log", this, environment, programOptions, "access", false));
+            }
+
+            if (notificationLog) {
+                activeCollectors.add(new LogCollector(server.getName(), finalDirSuffix, "notification.log", this, environment, programOptions, "notification", false));
+            }
             if (jvmReport) {
                 activeCollectors.add(new JVMCollector(environment, programOptions, server.getName(), JvmCollectionType.JVM_REPORT, finalDirSuffix));
             }
