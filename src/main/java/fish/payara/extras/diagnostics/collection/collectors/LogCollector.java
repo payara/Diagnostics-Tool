@@ -214,8 +214,9 @@ public class LogCollector extends FileCollector {
                     Files.createDirectories(finalOutputFilePath.getParent());
                     try (OutputStream os = new FileOutputStream(finalOutputFilePath.toFile())) {
                         byte[] buffer = new byte[1024];
-                        while (zis.read(buffer) > 0) {
-                            os.write(buffer);
+                        int len;
+                        while ((len = zis.read(buffer)) > 0) {
+                            os.write(buffer, 0, len);
                         }
                     }
                 }
