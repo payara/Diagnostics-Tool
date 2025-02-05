@@ -105,7 +105,7 @@ public class HeapDumpCollector implements Collector {
             }
 
             if (result.startsWith("Warning:") && result.contains("seems to be offline; command generate-heap-dump was not replicated to that instance")) {
-                LOGGER.warning(target + "is offline! Heap Dump will NOT be collected!");
+                LOGGER.warning(target + " is offline! Heap Dump will NOT be collected!");
             }
         } catch (CommandException e) {
             if (e.getMessage().contains("Remote server does not listen for requests on")) {
@@ -137,7 +137,7 @@ public class HeapDumpCollector implements Collector {
     private boolean downloadFileUsingSCP(String remoteFile, String localDirectory, String fileName) throws IOException {
         try  {
             ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-            String deleteFileCommand = "cd " + nodeInstallationDirectory + " && rm " + fileName;
+            String deleteFileCommand = "rm "+ nodeInstallationDirectory +"/" + fileName;
             SSHLauncher sshL = getSSHL(serviceLocator);
             sshL.init(node, LOGGER);
             SCPClient scpClient = sshL.getSCPClient();
