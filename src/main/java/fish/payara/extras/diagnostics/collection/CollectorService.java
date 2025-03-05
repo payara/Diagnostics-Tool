@@ -47,10 +47,7 @@ import com.sun.enterprise.config.serverbeans.Cluster;
 import com.sun.enterprise.config.serverbeans.Domain;
 import com.sun.enterprise.config.serverbeans.Server;
 import fish.payara.enterprise.config.serverbeans.DeploymentGroup;
-import fish.payara.extras.diagnostics.collection.collectors.DomainXmlCollector;
-import fish.payara.extras.diagnostics.collection.collectors.HeapDumpCollector;
-import fish.payara.extras.diagnostics.collection.collectors.JVMCollector;
-import fish.payara.extras.diagnostics.collection.collectors.LogCollector;
+import fish.payara.extras.diagnostics.collection.collectors.*;
 import fish.payara.extras.diagnostics.util.DomainUtil;
 import fish.payara.extras.diagnostics.util.JvmCollectionType;
 import fish.payara.extras.diagnostics.util.TargetType;
@@ -96,6 +93,7 @@ public class CollectorService {
     private Boolean threadDump;
     private Boolean jvmReport;
     private Boolean heapDump;
+    private boolean serverIsOn = true;
     private Domain domain;
     private DomainUtil domainUtil;
     private final String domainName;
@@ -160,6 +158,7 @@ public class CollectorService {
         // Populates the `targets` list
         getInstanceList();
         String instanceTargetPlaceholder = "";
+
         if (domain == null) {
             if (instanceList.isEmpty()) {
                 activeCollectors = getActiveCollectors(parameterMap, TargetType.DOMAIN, instanceTargetPlaceholder);
@@ -277,6 +276,11 @@ public class CollectorService {
                 LOGGER.info("Instance List " + this.instanceList);
             }
         } catch (Exception e) {
+            if (e.getMessage().contains("Is the server up?")) {
+                LOGGER.info("Server Offline! Only domain.xml and local server logs will be collected.");
+                LOGGER.info("Turn on Server to collect from instances!");
+                serverIsOn = false;
+            }
             if (instanceList.isEmpty()) {
                 LOGGER.info("No instances found! Nothing will be collected.");
             }
@@ -377,8 +381,24 @@ public class CollectorService {
                 activeCollectors.add(new DomainXmlCollector(domainXmlPath, obfuscateDomainXml, this));
             }
             if (serverLog) {
-                boolean collectDomainLogs = true;
-                activeCollectors.add(new LogCollector("server.log", this, environment, programOptions, collectDomainLogs));
+                if (!serverIsOn) {
+                    Path serverLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
+                    activeCollectors.add(new LocalLogCollector(serverLogPath, "server.log", this));
+                } else {
+                    boolean collectDomainLogs = true;
+                    activeCollectors.add(new LogCollector("server.log", this, environment, programOptions, collectDomainLogs));
+                }
+            }
+
+            if (!serverIsOn){
+                if (notificationLog){
+                    Path serverLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
+                    activeCollectors.add(new LocalLogCollector(serverLogPath, "notification.log", this));
+                }
+                if (accessLog){
+                    Path serverLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
+                    activeCollectors.add(new LocalLogCollector(serverLogPath, "access_log", this));
+                }
             }
 
             //adds folder for instance
@@ -431,15 +451,29 @@ public class CollectorService {
                 activeCollectors.add(new DomainXmlCollector(Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "config", "domain.xml"), server.getName(), finalDirSuffix, obfuscateDomainXml, this));
             }
 
+            Path logPath = Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "logs");
+
             if (serverLog) {
-                activeCollectors.add(new LogCollector(server.getName(), finalDirSuffix, "server.log", this, environment, programOptions, "server", false));
+                if (!serverIsOn && instanceType.equals("CONFIG")) {
+                    activeCollectors.add(new LocalLogCollector(logPath, server.getName(), finalDirSuffix, "server.log",this));
+                } else if (serverIsOn){
+                    activeCollectors.add(new LogCollector(server.getName(), finalDirSuffix, "server.log", this, environment, programOptions, "server", false));
+                }
             }
             if (accessLog) {
-                activeCollectors.add(new LogCollector(server.getName(), finalDirSuffix, "access_log", this, environment, programOptions, "access", false));
+                if (!serverIsOn && instanceType.equals("CONFIG")) {
+                    activeCollectors.add(new LocalLogCollector(logPath, server.getName(), finalDirSuffix, "access_log",this));
+                } else if (serverIsOn){
+                    activeCollectors.add(new LogCollector(server.getName(), finalDirSuffix, "access_log", this, environment, programOptions, "access", false));
+                }
             }
 
             if (notificationLog) {
-                activeCollectors.add(new LogCollector(server.getName(), finalDirSuffix, "notification.log", this, environment, programOptions, "notification", false));
+                if (!serverIsOn && instanceType.equals("CONFIG")) {
+                    activeCollectors.add(new LocalLogCollector(logPath, server.getName(), finalDirSuffix, "notification.log",this));
+                } else if (serverIsOn) {
+                    activeCollectors.add(new LogCollector(server.getName(), finalDirSuffix, "notification.log", this, environment, programOptions, "notification", false));
+                }
             }
             if (jvmReport) {
                 activeCollectors.add(new JVMCollector(environment, programOptions, server.getName(), JvmCollectionType.JVM_REPORT, finalDirSuffix));

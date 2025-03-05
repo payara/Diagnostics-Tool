@@ -97,7 +97,6 @@ public class LogCollector extends FileCollector {
         this.target = collectorService.getTarget();
         this.collectNotifcationLogs = collectorService.notificationLog;
         this.collectServerLogs = collectorService.serverLog;
-
     }
 
     public LogCollector(String instanceName, String dirSuffix, String logName, CollectorService collectorService,  Environment environment, ProgramOptions programOptions, String collectionLogType, boolean logsForServer) {
