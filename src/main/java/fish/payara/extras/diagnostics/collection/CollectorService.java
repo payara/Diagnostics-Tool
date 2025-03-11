@@ -45,9 +45,14 @@ import com.sun.enterprise.admin.cli.ProgramOptions;
 import com.sun.enterprise.admin.cli.remote.RemoteCLICommand;
 import com.sun.enterprise.config.serverbeans.Cluster;
 import com.sun.enterprise.config.serverbeans.Domain;
+import com.sun.enterprise.config.serverbeans.Node;
 import com.sun.enterprise.config.serverbeans.Server;
 import fish.payara.enterprise.config.serverbeans.DeploymentGroup;
-import fish.payara.extras.diagnostics.collection.collectors.*;
+import fish.payara.extras.diagnostics.collection.collectors.DomainXmlCollector;
+import fish.payara.extras.diagnostics.collection.collectors.HeapDumpCollector;
+import fish.payara.extras.diagnostics.collection.collectors.JVMCollector;
+import fish.payara.extras.diagnostics.collection.collectors.LocalLogCollector;
+import fish.payara.extras.diagnostics.collection.collectors.LogCollector;
 import fish.payara.extras.diagnostics.util.DomainUtil;
 import fish.payara.extras.diagnostics.util.JvmCollectionType;
 import fish.payara.extras.diagnostics.util.TargetType;
@@ -57,7 +62,6 @@ import org.glassfish.api.admin.ParameterMap;
 import org.glassfish.api.logging.LogLevel;
 import org.glassfish.hk2.api.ServiceLocator;
 import org.jvnet.hk2.config.ConfigParser;
-import com.sun.enterprise.config.serverbeans.*;
 
 import javax.json.JsonString;
 import java.io.File;
@@ -65,7 +69,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.*;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -384,20 +392,15 @@ public class CollectorService {
                 if (!serverIsOn) {
                     Path serverLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
                     activeCollectors.add(new LocalLogCollector(serverLogPath, "server.log", this));
+                    if (notificationLog){
+                        activeCollectors.add(new LocalLogCollector(serverLogPath, "notification.log", this));
+                    }
+                    if (accessLog){
+                        activeCollectors.add(new LocalLogCollector(serverLogPath, "access_log", this));
+                    }
                 } else {
                     boolean collectDomainLogs = true;
                     activeCollectors.add(new LogCollector("server.log", this, environment, programOptions, collectDomainLogs));
-                }
-            }
-
-            if (!serverIsOn){
-                if (notificationLog){
-                    Path serverLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
-                    activeCollectors.add(new LocalLogCollector(serverLogPath, "notification.log", this));
-                }
-                if (accessLog){
-                    Path serverLogPath = Paths.get((String) parameterMap.get(LOGS_PATH));
-                    activeCollectors.add(new LocalLogCollector(serverLogPath, "access_log", this));
                 }
             }
 
