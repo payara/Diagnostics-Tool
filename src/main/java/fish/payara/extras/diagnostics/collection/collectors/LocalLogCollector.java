@@ -1,7 +1,7 @@
 /*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  *
- * Copyright (c) 2023-2024 Payara Foundation and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023-2025 Payara Foundation and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -52,9 +52,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.logging.Logger;
 import java.util.Map;
 
 public class LocalLogCollector extends FileCollector {
+    private static final Logger LOGGER = Logger.getLogger(LocalLogCollector.class.getName());
 
     private Path logPath;
     private String logName;
@@ -101,7 +103,7 @@ public class LocalLogCollector extends FileCollector {
         if (Files.exists(sourcePath)) {
             collectExistingLogs(sourcePath, destinationPath,fileContains);
         } else {
-            logger.log(LogLevel.SEVERE, "Could not find directory {0}", new Object[]{sourcePath});
+            LOGGER.log(LogLevel.SEVERE, "Could not find directory {0}", new Object[]{sourcePath});
             return 1;
         }
         return 0;
@@ -109,12 +111,12 @@ public class LocalLogCollector extends FileCollector {
 
     private void collectExistingLogs(Path sourcePath, Path destinationPath, String fileContains) {
         try {
-            logger.info(String.format("Collecting %s from %s", logName, (getInstanceName() != null ? getInstanceName() : "server")));
+            LOGGER.info(String.format("Collecting %s from %s", logName, (getInstanceName() != null ? getInstanceName() : "server")));
             CopyDirectoryVisitor copyDirectoryVisitor = new CopyDirectoryVisitor(destinationPath, fileContains);
             copyDirectoryVisitor.setInstanceName(getInstanceName());
             Files.walkFileTree(sourcePath, copyDirectoryVisitor);
         } catch (IOException io) {
-            logger.log(LogLevel.SEVERE, "Could not copy directory " + sourcePath + " to path " + destinationPath.toString());
+            LOGGER.log(LogLevel.SEVERE, "Could not copy directory " + sourcePath + " to path " + destinationPath.toString());
             io.printStackTrace();
         }
     }
