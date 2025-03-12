@@ -427,8 +427,16 @@ public class CollectorService {
             String finalDirSuffix = Paths.get(dirSuffix, server.getName()).toString();
             String instanceType = instanceWithType.get(server.getName());
 
-            if (domainXml && instanceType.equals("CONFIG")) {
-                activeCollectors.add(new DomainXmlCollector(Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "config", "domain.xml"), server.getName(), finalDirSuffix, obfuscateDomainXml, this));
+            if (domainXml) {
+                switch (instanceType) {
+                    case "CONFIG":
+                        activeCollectors.add(new DomainXmlCollector(Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "config", "domain.xml"), server.getName(), finalDirSuffix, obfuscateDomainXml, this));
+                        break;
+                    case "SSH":
+                        Path domainXmlPath = Paths.get((String) parameterMap.get(DOMAIN_XML_FILE_PATH));
+                        activeCollectors.add(new DomainXmlCollector(domainXmlPath, server.getName(), finalDirSuffix, obfuscateDomainXml, this));
+                        break;
+                }
             }
 
             if (serverLog) {
