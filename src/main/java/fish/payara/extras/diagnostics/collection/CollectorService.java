@@ -290,7 +290,20 @@ public class CollectorService {
                 serverIsOn = false;
             }
             if (instanceList.isEmpty()) {
-                LOGGER.info("No instances found! Nothing will be collected.");
+                LOGGER.info("No instances found from remote command. Collecting local instances");
+                DomainUtil domainUtil = new DomainUtil(domain);
+                List<Server> localInstances = domainUtil.getStandaloneLocalInstances();
+
+                for (Server server : localInstances) {
+                    this.instanceList.add(server.getName());
+                    instanceWithType.put(server.getName(), "CONFIG");
+                }
+
+                if (instanceList.isEmpty()) {
+                    LOGGER.info("No local instances found using DomainUtil.");
+                } else {
+                    LOGGER.info("Local instances retrieved: " + instanceList);
+                }
             }
             LOGGER.log(LogLevel.SEVERE, "Could not execute command. " , e);
         }
