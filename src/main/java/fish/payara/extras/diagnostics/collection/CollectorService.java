@@ -426,8 +426,14 @@ public class CollectorService {
 
 
     private void addInstanceCollectors(List<Collector> activeCollectors, List<Server> serversList, String dirSuffix) {
+        int instanceCounter = 0;
         for (Server server : serversList) {
             String finalDirSuffix = Paths.get(dirSuffix, server.getName()).toString();
+            if (finalDirSuffix.isEmpty()) {
+                LOGGER.info("Could not find name for folder! Setting default name: No_Name_Instance"+instanceCounter);
+                finalDirSuffix = "No_Name_Instance"+instanceCounter;
+                instanceCounter++;
+            }
             String instanceType = instanceWithType.get(server.getName());
 
             if (domainXml && instanceType.equals("CONFIG")) {
