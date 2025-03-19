@@ -164,6 +164,12 @@ public class CollectorService {
 
         List<Collector> activeCollectors = new ArrayList<>();
         // Populates the `targets` list
+        domainUtil = new DomainUtil(domain);
+        TargetType targetType = getTargetType();
+        if (targetType == null) {
+            LOGGER.info("Target not found! Is the name correct?");
+            return 0;
+        }
         getInstanceList();
         String instanceTargetPlaceholder = "";
 
@@ -176,8 +182,6 @@ public class CollectorService {
                 activeCollectors = getActiveCollectors(parameterMap, TargetType.DOMAIN, instanceTargetPlaceholder);
             }
             else {
-                domainUtil = new DomainUtil(domain);
-                TargetType targetType = getTargetType();
                 switch (targetType) {
                     case DOMAIN:
                         activeCollectors = getActiveCollectors(parameterMap, targetType, instanceList.get(0));
