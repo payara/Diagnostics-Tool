@@ -305,6 +305,9 @@ public class CollectorService {
                     LOGGER.info("Local instances retrieved: " + instanceList);
                 }
             }
+            if (e instanceof NullPointerException) {
+                LOGGER.info("No install directory could be found. Please check remote/local node");
+            }
             LOGGER.log(LogLevel.SEVERE, "Could not execute command. " , e);
         }
     }
@@ -459,8 +462,17 @@ public class CollectorService {
 
 
     private void addInstanceCollectors(List<Collector> activeCollectors, List<Server> serversList, String dirSuffix) {
+        int instanceCounter = 0;
         for (Server server : serversList) {
-            String finalDirSuffix = Paths.get(dirSuffix, server.getName()).toString();
+            Path dirSuffixPath = Paths.get(dirSuffix, server.getName());
+            String finalDirSuffix;
+            if (dirSuffixPath == null) {
+                LOGGER.info("Could not find name for folder! Setting default name: No_Name_Instance"+instanceCounter);
+                finalDirSuffix = "No_Name_Instance"+instanceCounter;
+                instanceCounter++;
+            } else {
+                finalDirSuffix = dirSuffixPath.toString();
+            }
             String instanceType = instanceWithType.get(server.getName());
 
             if (domainXml) {
