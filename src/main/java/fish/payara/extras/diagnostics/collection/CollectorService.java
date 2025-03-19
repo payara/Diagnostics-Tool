@@ -178,6 +178,10 @@ public class CollectorService {
             else {
                 domainUtil = new DomainUtil(domain);
                 TargetType targetType = getTargetType();
+                if (targetType == null) {
+                    LOGGER.info("Target not found! Is the name correct?");
+                    return 0;
+                }
                 switch (targetType) {
                     case DOMAIN:
                         activeCollectors = getActiveCollectors(parameterMap, targetType, instanceList.get(0));
