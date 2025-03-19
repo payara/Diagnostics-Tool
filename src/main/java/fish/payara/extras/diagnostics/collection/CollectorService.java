@@ -280,7 +280,7 @@ public class CollectorService {
             if (instanceList.isEmpty()) {
                 LOGGER.info("No instances found! Nothing will be collected.");
             }
-            if (e.getMessage().contains("NullPointerException")) {
+            if (e instanceof NullPointerException) {
                 LOGGER.info("No install directory could be found. Please check remote/local node");
             }
             LOGGER.log(LogLevel.SEVERE, "Could not execute command. " , e);
