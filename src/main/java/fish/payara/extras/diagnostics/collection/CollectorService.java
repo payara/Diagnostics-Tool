@@ -421,6 +421,18 @@ public class CollectorService {
                 }
             }
 
+            if (jvmReport) {
+                activeCollectors.add(new JVMCollector(environment, programOptions, "server", JvmCollectionType.JVM_REPORT, correctDomainRunning));
+            }
+
+            if (threadDump) {
+                activeCollectors.add(new JVMCollector(environment, programOptions, "server", JvmCollectionType.THREAD_DUMP, correctDomainRunning));
+            }
+
+            if (heapDump) {
+                activeCollectors.add(new HeapDumpCollector("server", programOptions, environment, correctDomainRunning));
+            }
+
             //adds folder for instance
             if (!instanceList.isEmpty()) {
                 addInstanceCollectors(activeCollectors, domainUtil.getStandaloneLocalInstances(), "");
