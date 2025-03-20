@@ -288,7 +288,7 @@ public class CollectorService {
                 LOGGER.info("Instance List " + this.instanceList);
             }
         } catch (Exception e) {
-            if (e.getMessage().contains("Is the server up?")) {
+            if (e.getMessage() != null && e.getMessage().contains("Is the server up?")) {
                 LOGGER.info("Server Offline! Only domain.xml and local server logs will be collected.");
                 LOGGER.info("Turn on Server to collect from instances!");
                 serverIsOn = false;
