@@ -288,7 +288,7 @@ public class CollectorService {
                 LOGGER.info("Instance List " + this.instanceList);
             }
         } catch (Exception e) {
-            if (e.getMessage().contains("Is the server up?")) {
+            if (e.getMessage() != null && e.getMessage().contains("Is the server up?")) {
                 LOGGER.info("Server Offline! Only domain.xml and local server logs will be collected.");
                 LOGGER.info("Turn on Server to collect from instances!");
                 serverIsOn = false;
@@ -422,6 +422,18 @@ public class CollectorService {
                     boolean collectDomainLogs = true;
                     activeCollectors.add(new LogCollector("server.log", this, environment, programOptions, collectDomainLogs));
                 }
+            }
+
+            if (jvmReport) {
+                activeCollectors.add(new JVMCollector(environment, programOptions, "server", JvmCollectionType.JVM_REPORT, correctDomainRunning));
+            }
+
+            if (threadDump) {
+                activeCollectors.add(new JVMCollector(environment, programOptions, "server", JvmCollectionType.THREAD_DUMP, correctDomainRunning));
+            }
+
+            if (heapDump) {
+                activeCollectors.add(new HeapDumpCollector("server", programOptions, environment, correctDomainRunning));
             }
 
             //adds folder for instance
