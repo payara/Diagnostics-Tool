@@ -79,6 +79,13 @@ public class HeapDumpCollector implements Collector {
     private ServiceLocator serviceLocator;
     private String dirSuffix;
 
+    public HeapDumpCollector(String target, ProgramOptions programOptions, Environment environment, boolean correctDomain) {
+        this.target = target;
+        this.programOptions = programOptions;
+        this.environment = environment;
+        this.correctDomain = correctDomain;
+    }
+
     public HeapDumpCollector(String target, ProgramOptions programOptions, Environment environment, String dirSuffix, CollectorService collectorService) {
         this.target = target;
         this.programOptions = programOptions;
@@ -110,13 +117,16 @@ public class HeapDumpCollector implements Collector {
             if (!Files.exists(outputPath)) {
                 Files.createDirectories(outputPath);
             }
-            if (targetType.equals("CONFIG")) {
-                //If it is local, uses destination folder as outputDir
-                parameterMap.add("outputDir", outputPath.toString());
+            if (targetType != null){
+                if (targetType.equals("CONFIG")) {
+                    //If it is local, uses destination folder as outputDir
+                    parameterMap.add("outputDir", outputPath.toString());
+                }
+                if (targetType.equals(SSH)) {
+                    parameterMap.add("outputDir", nodeInstallationDirectory);
+                }
             }
-            if (targetType.equals(SSH)) {
-                parameterMap.add("outputDir", nodeInstallationDirectory);
-            }
+            parameterMap.add("outputDir", outputPath.toString());
             programOptions.updateOptions(parameterMap);
             programOptions.setInteractive(false);
 
@@ -135,11 +145,16 @@ public class HeapDumpCollector implements Collector {
                 LOGGER.warning("Could not extract file name from result.");
             }
 
-            if (targetType.equals(SSH)) {
-                LOGGER.info("Downloading Heap Dump from remote host.");
-                String remoteFile = nodeInstallationDirectory+"/"+fileName;
-                downloadFileUsingSCP(remoteFile, outputPath.toString(), fileName);
+            if (targetType != null) {
+                if (fileName != null && targetType.equals(SSH)) {
+                    LOGGER.info("Downloading Heap Dump from remote host.");
+                    String remoteFile = nodeInstallationDirectory+"/"+fileName;
+                    downloadFileUsingSCP(remoteFile, outputPath.toString(), fileName);
+                } else if (targetType.equals(SSH)) {
+                    LOGGER.warning("File name is null. Skipping file download");
+                }
             }
+
             if (result.startsWith("Warning:") && result.contains("seems to be offline; command generate-heap-dump was not replicated to that instance")) {
                 LOGGER.warning(target + " is offline! Heap Dump will NOT be collected!");
             }
