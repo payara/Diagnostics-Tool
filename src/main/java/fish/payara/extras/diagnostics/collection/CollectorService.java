@@ -105,6 +105,7 @@ public class CollectorService {
     private Domain domain;
     private DomainUtil domainUtil;
     private final String domainName;
+    private Path logPath;
     private final ServiceLocator serviceLocator;
     private final Map<String, Object> parameterMap;
     private List<String> instanceList = new ArrayList<>();
@@ -480,7 +481,9 @@ public class CollectorService {
                 }
             }
 
-            Path logPath = Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "logs");
+            if (instanceType.equals("CONFIG")){
+                logPath = Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "logs");
+            }
 
             if (serverLog) {
                 if (!serverIsOn && instanceType.equals("CONFIG")) {
