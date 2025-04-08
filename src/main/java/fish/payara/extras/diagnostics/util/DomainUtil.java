@@ -40,6 +40,17 @@ public class DomainUtil {
         return instances;
     }
 
+    public List<Server> getLocalInstances() {
+        List<Server> instances = new ArrayList<>();
+        List<Node> nodes = getNodes();
+        for (Node node : nodes) {
+            if (node.isLocal()) {
+                instances.addAll(domain.getInstancesOnNode(node.getName()));
+            }
+        }
+        return instances;
+    }
+
     public List<Server> getStandaloneLocalInstances() {
         List<Server> instances = getInstances();
 
