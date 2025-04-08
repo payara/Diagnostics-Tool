@@ -223,6 +223,7 @@ public class CollectorService {
             cleanUpDirectory(filePath.toFile());
         } catch (IOException e) {
             LOGGER.log(LogLevel.SEVERE, "Could not zip collected files.");
+            LOGGER.log(LogLevel.SEVERE, e.getMessage());
             return 1;
         }
         //Save output to properties, to make uplaod seamless for the user
@@ -297,7 +298,7 @@ public class CollectorService {
             if (instanceList.isEmpty()) {
                 LOGGER.info("No instances found from remote command. Collecting local instances");
                 DomainUtil domainUtil = new DomainUtil(domain);
-                List<Server> localInstances = domainUtil.getStandaloneLocalInstances();
+                List<Server> localInstances = domainUtil.getLocalInstances();
 
                 for (Server server : localInstances) {
                     this.instanceList.add(server.getName());
@@ -481,6 +482,11 @@ public class CollectorService {
             String finalDirSuffix = Paths.get(dirSuffix, server.getName()).toString();
             String instanceType = instanceWithType.get(server.getName());
 
+            if (instanceType == null) {
+                LOGGER.info("Instance type for: " + server.getName() + " not found, skipping it.");
+                continue;
+            }
+
             if (domainXml) {
                 switch (instanceType) {
                     case "CONFIG":
@@ -494,6 +500,7 @@ public class CollectorService {
             }
 
             if (instanceType.equals("CONFIG")){
+                LOGGER.info("Getting log path for: " + server.getName());
                 logPath = Paths.get(domainUtil.getNodePaths().get(server.getNodeRef()).toString(), server.getName(), "logs");
             }
 
