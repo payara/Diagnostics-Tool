@@ -53,6 +53,7 @@ import fish.payara.extras.diagnostics.collection.collectors.HeapDumpCollector;
 import fish.payara.extras.diagnostics.collection.collectors.JVMCollector;
 import fish.payara.extras.diagnostics.collection.collectors.LocalLogCollector;
 import fish.payara.extras.diagnostics.collection.collectors.LogCollector;
+import fish.payara.extras.diagnostics.collection.collectors.FileCollector;
 import fish.payara.extras.diagnostics.util.DomainUtil;
 import fish.payara.extras.diagnostics.util.JvmCollectionType;
 import fish.payara.extras.diagnostics.util.TargetType;
@@ -205,7 +206,21 @@ public class CollectorService {
         }
 
         int result = 0;
+        String previousInstance = null;
         for (Collector collector : activeCollectors) {
+            String currentInstance = null;
+            if (collector instanceof FileCollector) {
+                currentInstance = ((FileCollector) collector).getInstanceName();
+            }
+
+            if (currentInstance != null && !currentInstance.equals(previousInstance)) {
+                if (previousInstance != null) {
+                    LOGGER.info("");
+                }
+                LOGGER.info("");
+                LOGGER.info("Collecting for: " + currentInstance);
+                previousInstance = currentInstance;
+            }
             collector.setParams(parameterMap);
             result = collector.collect();
             if (result != 0) {
