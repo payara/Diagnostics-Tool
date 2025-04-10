@@ -132,7 +132,7 @@ public class HeapDumpCollector implements Collector {
 
             RemoteCLICommand remoteCLICommand = new RemoteCLICommand("generate-heap-dump", programOptions, environment);
             String result = remoteCLICommand.executeAndReturnOutput();
-            LOGGER.info(result);
+            LOGGER.info("Heap Dump Generated");
 
             // Extract file name from command output
             String fileName = null;
