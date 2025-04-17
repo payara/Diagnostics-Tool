@@ -68,6 +68,7 @@ import jakarta.json.JsonString;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.FileVisitResult;
@@ -207,26 +208,30 @@ public class CollectorService {
 
         int result = 0;
         String previousInstance = null;
+        String currentInstance = null;
+        boolean skipFirstCollectorName = true; //first collector (DomainXML) has no instanceName/target
         for (Collector collector : activeCollectors) {
-            String currentInstance = null;
-            if (collector instanceof FileCollector) {
-                currentInstance = ((FileCollector) collector).getInstanceName();
+            if (!skipFirstCollectorName || !(collector.getClass().getSimpleName().contains("DomainXml"))) {
+                currentInstance = getCollectorTarget(collector);
+
+                if (currentInstance != null && !currentInstance.equals(previousInstance)) {
+                    if (previousInstance != null) {
+                        LOGGER.info("");
+                    }
+                    LOGGER.info("");
+                    LOGGER.info("Collecting for: " + currentInstance);
+                    previousInstance = currentInstance;
+                }
             }
 
-            if (currentInstance != null && !currentInstance.equals(previousInstance)) {
-                if (previousInstance != null) {
-                    LOGGER.info("");
-                }
-                LOGGER.info("");
-                LOGGER.info("Collecting for: " + currentInstance);
-                previousInstance = currentInstance;
-            }
+            skipFirstCollectorName = false;
             collector.setParams(parameterMap);
             result = collector.collect();
             if (result != 0) {
                 return result;
             }
         }
+
 
         Path filePath = Paths.get((String) parameterMap.get(DIR_PARAM));
 
@@ -609,6 +614,34 @@ public class CollectorService {
     public String getTarget(){
         return target;
     }
+
+    //Extracts field "target" or "instanceName" from the collector so it can be used to separate output
+    private String getCollectorTarget(Collector collector) {
+        String[] possibleFields = {"target", "instanceName"};
+
+        for (String fieldName : possibleFields) {
+            Class<?> currentClass = collector.getClass();
+            while (currentClass != null) {
+                try {
+                    Field field = currentClass.getDeclaredField(fieldName);
+                    field.setAccessible(true);
+                    Object value = field.get(collector);
+                    if (value != null) {
+                        return value.toString();
+                    }
+                } catch (NoSuchFieldException e) {
+                    // for domainxml its stored in the superclass since it uses super.setInstanceName
+                    currentClass = currentClass.getSuperclass();
+                } catch (IllegalAccessException e) {
+                    // Shouldn't happen due to setAccessible(true), but fallback
+                    break;
+                }
+            }
+        }
+        return null;
+    }
+
+
 
     public String returnInstanceType(String instance) {
         return instanceWithType.get(instance);
