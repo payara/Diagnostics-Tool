@@ -103,6 +103,7 @@ public class CollectorService {
     private Boolean threadDump;
     private Boolean jvmReport;
     private Boolean heapDump;
+    private boolean isOkayToCollect = true;
     private boolean serverIsOn = true;
     private Domain domain;
     private DomainUtil domainUtil;
@@ -174,6 +175,9 @@ public class CollectorService {
             return 0;
         }
         getInstanceList();
+        if (!isOkayToCollect){
+            return 0;
+        }
         String instanceTargetPlaceholder = "";
 
         if (domain == null) {
@@ -314,6 +318,12 @@ public class CollectorService {
                 LOGGER.info("Server Offline! Only domain.xml and local server logs will be collected.");
                 LOGGER.info("Turn on Server to collect from instances!");
                 serverIsOn = false;
+            }
+            if (e.getMessage() != null && e.getMessage().contains("Authentication failed")) {
+                LOGGER.info(e.getMessage());
+                LOGGER.info("Cancelling collection");
+                isOkayToCollect = false;
+                return;
             }
             if (instanceList.isEmpty()) {
                 LOGGER.info("No instances found from remote command. Collecting local instances");
